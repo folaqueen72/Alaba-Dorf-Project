@@ -1,15 +1,27 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export function SiteFooter() {
   return (
     <footer className="bg-ink text-white mt-10">
       <div className="max-w-5xl mx-auto px-4 py-8 grid gap-6 sm:grid-cols-3 text-sm">
         <div>
-          <p className="font-display text-lg font-semibold mb-2">
-            Alaba Dorf Outlet
-          </p>
+          <div className="flex items-center gap-2.5 mb-2">
+            <Image
+              src="/logo.png"
+              alt="Alaba Dorf Outlet logo"
+              width={36}
+              height={36}
+              className="rounded-full bg-white"
+            />
+            <p className="font-display text-lg font-semibold">
+              Alaba Dorf Outlet
+            </p>
+          </div>
           <p className="text-ash-200">
-            Farm · Cow &amp; Pig Sharing · Photo Studio · Eatery
+            Farm · Cow &amp; Pig Sharing · Photo Studio · Eatery.
+            <br />
+            Order online, pay online, carry your goods.
           </p>
         </div>
         <div>
@@ -35,9 +47,7 @@ export function SiteFooter() {
         <div>
           <p className="font-bold mb-2">Visit Us</p>
           <p className="text-ash-200">
-            Pickup available daily.
-            <br />
-            Delivery at checkout.
+            Come pick up daily, or choose delivery for farm and food orders.
           </p>
           <Link
             href="/track"

@@ -1,23 +1,50 @@
-"use client";
-
-import { useState } from "react";
-import Link from "next/link";
 import { SiteHeader } from "../components/SiteHeader";
 import { SiteFooter } from "../components/SiteFooter";
 import { Card } from "../components/ui/Card";
-import { Button } from "../components/ui/Button";
+import { StudioBooking, type SessionLine, type SlotLine } from "./StudioBooking";
+import { prisma } from "@/lib/prisma";
 
-const SESSIONS = [
-  { id: "basic", name: "Basic Session", meta: "30 minutes", price: "₦X" },
-  { id: "premium", name: "Premium Session", meta: "1 hour", price: "₦X" },
-];
+export const dynamic = "force-dynamic";
 
-const SLOTS = ["10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM"];
-const BOOKED = new Set(["11:00 AM"]);
+function fmtDay(d: Date): string {
+  return d.toLocaleDateString("en-NG", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
 
-export default function StudioPage() {
-  const [session, setSession] = useState("premium");
-  const [slot, setSlot] = useState<string | null>("12:00 PM");
+function fmtTime(t: string): string {
+  const [h, m] = t.split(":").map(Number);
+  const suffix = h >= 12 ? "PM" : "AM";
+  const hr = h % 12 === 0 ? 12 : h % 12;
+  return `${hr}:${String(m).padStart(2, "0")} ${suffix}`;
+}
+
+export default async function StudioPage() {
+  const [sessions, slots] = await Promise.all([
+    prisma.sessionType.findMany({
+      where: { active: true },
+      orderBy: { durationMin: "asc" },
+    }),
+    prisma.studioSlot.findMany({
+      where: { status: { in: ["AVAILABLE", "BOOKED"] } },
+      orderBy: [{ date: "asc" }, { startTime: "asc" }],
+      take: 40,
+    }),
+  ]);
+
+  const sessionLines: SessionLine[] = sessions.map((s) => ({
+    id: s.id,
+    name: s.name,
+    meta: `${s.durationMin} minutes`,
+  }));
+  const slotLines: SlotLine[] = slots.map((s) => ({
+    id: s.id,
+    dateLabel: fmtDay(s.date),
+    label: fmtTime(s.startTime),
+    taken: s.status !== "AVAILABLE",
+  }));
 
   return (
     <>
@@ -27,59 +54,11 @@ export default function StudioPage() {
           Photo Studio
         </h1>
         <p className="text-ash-600 mb-4">
-          Pick a session, then a free slot. Booked slots lock instantly.
+          Pick a session, grab a free slot. Once you book am, e don lock — no
+          double booking.
         </p>
-
-        <Card title="Saturday, September 26">
-          <div className="grid gap-2 sm:grid-cols-2 mt-2 mb-4">
-            {SESSIONS.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => setSession(s.id)}
-                className={`text-left border rounded-[10px] p-3 ${
-                  session === s.id
-                    ? "bg-lemon-50 border-lemon-600"
-                    : "bg-white border-ash-400"
-                }`}
-              >
-                <p className="font-bold">{s.name}</p>
-                <p className="text-sm text-ash-600">
-                  {s.meta} · {s.price}
-                </p>
-              </button>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            {SLOTS.map((t) =>
-              BOOKED.has(t) ? (
-                <div
-                  key={t}
-                  className="border border-ash-200 bg-ash-100 text-ash-400 rounded-lg p-3 text-center text-sm font-semibold line-through"
-                >
-                  {t}
-                </div>
-              ) : (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setSlot(t)}
-                  className={`border rounded-lg p-3 text-center text-sm font-semibold ${
-                    slot === t
-                      ? "bg-lemon-600 border-lemon-600 text-white"
-                      : "bg-white border-ash-400"
-                  }`}
-                >
-                  {t}
-                </button>
-              )
-            )}
-          </div>
-          <Link href="/checkout" className="block mt-4">
-            <Button className="w-full" disabled={!slot}>
-              {slot ? `Book ${slot}` : "Pick a time slot"}
-            </Button>
-          </Link>
+        <Card>
+          <StudioBooking sessions={sessionLines} slots={slotLines} />
         </Card>
       </main>
       <SiteFooter />

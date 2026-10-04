@@ -18,6 +18,12 @@ function nextSaturday() {
 }
 
 async function main() {
+  await prisma.counter.upsert({
+    where: { id: "order" },
+    update: {},
+    create: { id: "order", next: 1042 },
+  });
+
   await prisma.eggInventory.upsert({
     where: { id: "eggs" },
     update: {},

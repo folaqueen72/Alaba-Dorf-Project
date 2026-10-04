@@ -330,6 +330,15 @@ model Payment {
   @@map("payment")
 }
 
+// ---------- Order numbering ----------
+
+model Counter {
+  id   String @id // e.g. "order"
+  next Int    @default(1042)
+
+  @@map("counter")
+}
+
 // ---------- Accountability ----------
 
 model ActivityLog {

@@ -28,3 +28,6 @@ build/
 # Database
 *.sqlite
 *.db
+
+# Local secrets for docker compose (never commit real values)
+secrets/

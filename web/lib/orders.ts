@@ -26,6 +26,23 @@ export async function findOrCreateCustomer(
   authUserId?: string | null
 ) {
   const phone = input.phone.replace(/[\s-]/g, "");
+  // Signed-in account first: one profile per account, even if the customer
+  // types a different phone number this time.
+  if (authUserId) {
+    const byUser = await tx.customer.findUnique({
+      where: { userId: authUserId },
+    });
+    if (byUser) {
+      return tx.customer.update({
+        where: { id: byUser.id },
+        data: {
+          name: input.name,
+          email: input.email ?? byUser.email,
+          address: input.address ?? byUser.address,
+        },
+      });
+    }
+  }
   const existing = await tx.customer.findUnique({ where: { phone } });
   if (existing) {
     // Backfill the login link when a guest later registers (PRD §18).
@@ -42,15 +59,31 @@ export async function findOrCreateCustomer(
     }
     return existing;
   }
-  return tx.customer.create({
-    data: {
-      name: input.name,
-      phone,
-      email: input.email,
-      address: input.address,
-      userId: authUserId ?? undefined,
-    },
-  });
+  try {
+    return await tx.customer.create({
+      data: {
+        name: input.name,
+        phone,
+        email: input.email,
+        address: input.address,
+        userId: authUserId ?? undefined,
+      },
+    });
+  } catch (e) {
+    // Lost a race (e.g. double submit): return whoever won.
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === "P2002"
+    ) {
+      const winner =
+        (await tx.customer.findUnique({ where: { phone } })) ??
+        (authUserId
+          ? await tx.customer.findUnique({ where: { userId: authUserId } })
+          : null);
+      if (winner) return winner;
+    }
+    throw e;
+  }
 }
 
 export function cleanPhone(phone: string): string {

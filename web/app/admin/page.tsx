@@ -1,6 +1,7 @@
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Alert } from "../components/ui/Alert";
+import { requireAdmin } from "@/lib/requireAdmin";
 
 const STATS = [
   { label: "Orders", value: "24" },
@@ -18,7 +19,8 @@ const RECENT = [
   { no: "#ADO1039", customer: "Tunde", dept: "Eatery", status: "failed" as const, label: "Failed Payment" },
 ];
 
-export default function AdminDashboard() {
+export default async function AdminDashboard() {
+  await requireAdmin();
   return (
     <>
       <h1 className="font-display text-3xl font-semibold mb-1">

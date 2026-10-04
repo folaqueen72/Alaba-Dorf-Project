@@ -6,11 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "node prisma/seed.cjs"
   },
   "dependencies": {
     "@fontsource/fraunces": "^5.3.0",
     "@fontsource/public-sans": "^5.3.0",
+    "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "better-auth": "^1.7.7",
     "next": "16.3.8",

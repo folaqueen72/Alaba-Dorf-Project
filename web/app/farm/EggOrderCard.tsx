@@ -9,6 +9,10 @@ import {
   CustomerFields,
   type CustomerInput,
 } from "../components/CustomerFields";
+import {
+  PaymentMethodPicker,
+  type PayMethod,
+} from "../components/PaymentMethodPicker";
 import { OrderSuccess } from "../components/OrderSuccess";
 import { koboToNaira } from "@/lib/format";
 
@@ -23,6 +27,7 @@ export function EggOrderCard({
 }) {
   const [crates, setCrates] = useState(1);
   const [mode, setMode] = useState<"pickup" | "delivery">("pickup");
+  const [payMethod, setPayMethod] = useState<PayMethod>("CARD");
   const [customer, setCustomer] = useState<CustomerInput>({
     name: "",
     phone: "",
@@ -31,16 +36,23 @@ export function EggOrderCard({
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [placed, setPlaced] = useState<{ ref: string; total: number } | null>(
-    null
-  );
+  const [placed, setPlaced] = useState<{
+    ref: string;
+    total: number;
+    method: PayMethod;
+  } | null>(null);
 
   if (placed) {
     return (
       <OrderSuccess
         ref={placed.ref}
         total={placed.total}
-        note="Your crates are reserved. Online payment is coming soon — for now, wait for our confirmation call, then collect your order or expect delivery."
+        payNow={placed.method !== "CASH"}
+        note={
+          placed.method === "CASH"
+            ? "Your crates are reserved. Pay cash when you collect your order or receive delivery."
+            : "Your crates are reserved. Complete payment now to confirm your order."
+        }
       />
     );
   }
@@ -58,11 +70,12 @@ export function EggOrderCard({
           lines: [{ kind: "eggs", crates }],
           customer,
           fulfillment: mode === "pickup" ? "PICKUP" : "DELIVERY",
+          paymentMethod: payMethod,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Order failed.");
-      setPlaced({ ref: data.orderNo, total: data.total });
+      setPlaced({ ref: data.orderNo, total: data.total, method: payMethod });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Order failed.");
     } finally {
@@ -119,6 +132,7 @@ export function EggOrderCard({
             onChange={setCustomer}
             needAddress={mode === "delivery"}
           />
+          <PaymentMethodPicker value={payMethod} onChange={setPayMethod} />
           <p className="font-display text-3xl font-semibold">
             {koboToNaira(crates * pricePerCrate)}
           </p>

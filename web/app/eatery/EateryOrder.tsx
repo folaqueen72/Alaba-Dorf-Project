@@ -7,6 +7,10 @@ import {
   CustomerFields,
   type CustomerInput,
 } from "../components/CustomerFields";
+import {
+  PaymentMethodPicker,
+  type PayMethod,
+} from "../components/PaymentMethodPicker";
 import { OrderSuccess } from "../components/OrderSuccess";
 import { koboToNaira } from "@/lib/format";
 
@@ -21,6 +25,7 @@ export type MenuLine = {
 export function EateryOrder({ menu }: { menu: MenuLine[] }) {
   const [cart, setCart] = useState<Record<string, number>>({});
   const [mode, setMode] = useState<"pickup" | "delivery">("pickup");
+  const [payMethod, setPayMethod] = useState<PayMethod>("CARD");
   const [customer, setCustomer] = useState<CustomerInput>({
     name: "",
     phone: "",
@@ -29,9 +34,11 @@ export function EateryOrder({ menu }: { menu: MenuLine[] }) {
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [placed, setPlaced] = useState<{ ref: string; total: number } | null>(
-    null
-  );
+  const [placed, setPlaced] = useState<{
+    ref: string;
+    total: number;
+    method: PayMethod;
+  } | null>(null);
 
   const total = menu.reduce(
     (sum, m) => sum + (cart[m.id] ?? 0) * m.price,
@@ -46,7 +53,12 @@ export function EateryOrder({ menu }: { menu: MenuLine[] }) {
       <OrderSuccess
         ref={placed.ref}
         total={placed.total}
-        note="The kitchen has received your order. Online payment is coming soon — your food will be ready for collection or delivery."
+        payNow={placed.method !== "CASH"}
+        note={
+          placed.method === "CASH"
+            ? "The kitchen has received your order. Pay cash when you collect your meal or receive delivery."
+            : "The kitchen has received your order. Complete payment now so preparation can start."
+        }
       />
     );
   }
@@ -70,11 +82,12 @@ export function EateryOrder({ menu }: { menu: MenuLine[] }) {
             })),
           customer,
           fulfillment: mode === "pickup" ? "PICKUP" : "DELIVERY",
+          paymentMethod: payMethod,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Order failed.");
-      setPlaced({ ref: data.orderNo, total: data.total });
+      setPlaced({ ref: data.orderNo, total: data.total, method: payMethod });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Order failed.");
     } finally {
@@ -159,6 +172,7 @@ export function EateryOrder({ menu }: { menu: MenuLine[] }) {
             onChange={setCustomer}
             needAddress={mode === "delivery"}
           />
+          <PaymentMethodPicker value={payMethod} onChange={setPayMethod} />
           {error ? <p className="text-sm font-semibold">{error}</p> : null}
           <Button className="w-full" disabled={busy}>
             {busy
@@ -166,8 +180,8 @@ export function EateryOrder({ menu }: { menu: MenuLine[] }) {
               : `Place Order · ${koboToNaira(total)} (${count} items)`}
           </Button>
           <p className="text-sm text-ash-600">
-            Food orders are prepaid — online payment arrives in the next
-            update.
+            Cash orders are paid on collection or delivery. Transfer and card
+            payments go through Paystack immediately.
           </p>
         </div>
       ) : null}

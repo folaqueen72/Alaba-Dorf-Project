@@ -6,6 +6,10 @@ import {
   CustomerFields,
   type CustomerInput,
 } from "../components/CustomerFields";
+import {
+  PaymentMethodPicker,
+  type PayMethod,
+} from "../components/PaymentMethodPicker";
 import { OrderSuccess } from "../components/OrderSuccess";
 
 export type SessionLine = { id: string; name: string; meta: string };
@@ -25,6 +29,7 @@ export function StudioBooking({
 }) {
   const [sessionId, setSessionId] = useState(sessions[0]?.id ?? "");
   const [slotId, setSlotId] = useState<string | null>(null);
+  const [payMethod, setPayMethod] = useState<PayMethod>("CARD");
   const [customer, setCustomer] = useState<CustomerInput>({
     name: "",
     phone: "",
@@ -33,13 +38,21 @@ export function StudioBooking({
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [placed, setPlaced] = useState<string | null>(null);
+  const [placed, setPlaced] = useState<{
+    ref: string;
+    method: PayMethod;
+  } | null>(null);
 
   if (placed) {
     return (
       <OrderSuccess
-        ref={placed}
-        note="Your slot is locked — no one else can book it. We will confirm payment and session details with you."
+        ref={placed.ref}
+        payNow={placed.method !== "CASH"}
+        note={
+          placed.method === "CASH"
+            ? "Your slot is locked — no one else can book it. Pay cash when you arrive for your session."
+            : "Your slot is locked — no one else can book it. Complete payment now to confirm your session."
+        }
       />
     );
   }
@@ -56,11 +69,19 @@ export function StudioBooking({
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionTypeId: sessionId, slotId, customer }),
+        body: JSON.stringify({
+          sessionTypeId: sessionId,
+          slotId,
+          customer,
+          paymentMethod: payMethod,
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Booking failed.");
-      setPlaced(data.bookingId.slice(0, 8).toUpperCase());
+      setPlaced({
+        ref: data.bookingId.slice(0, 8).toUpperCase(),
+        method: payMethod,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Booking failed.");
     } finally {
@@ -130,11 +151,14 @@ export function StudioBooking({
       )}
 
       {slotId ? (
-        <CustomerFields
-          value={customer}
-          onChange={setCustomer}
-          needAddress={false}
-        />
+        <>
+          <CustomerFields
+            value={customer}
+            onChange={setCustomer}
+            needAddress={false}
+          />
+          <PaymentMethodPicker value={payMethod} onChange={setPayMethod} />
+        </>
       ) : null}
       {error ? <p className="text-sm font-semibold">{error}</p> : null}
       <Button className="w-full" disabled={busy || !slotId}>

@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 
 // Server-side order helpers. All prices and totals are computed here —

@@ -7,6 +7,7 @@ type Body = {
   sessionTypeId: string;
   slotId: string;
   customer: { name: string; phone: string; email?: string };
+  paymentMethod?: "CASH" | "TRANSFER" | "CARD";
 };
 
 export async function POST(req: Request) {
@@ -33,6 +34,12 @@ export async function POST(req: Request) {
     assertCustomer(customerInput);
     if (!body.sessionTypeId || !body.slotId)
       throw new Error("Pick a session and a time slot.");
+    const paymentMethod =
+      body.paymentMethod === "CASH" ||
+      body.paymentMethod === "TRANSFER" ||
+      body.paymentMethod === "CARD"
+        ? body.paymentMethod
+        : "CARD";
 
     const result = await prisma.$transaction(async (tx) => {
       const customer = await findOrCreateCustomer(
@@ -70,6 +77,7 @@ export async function POST(req: Request) {
           sessionTypeId: sessionType.id,
           slotId: slot.id,
           paymentId: payment.id,
+          paymentMethod,
         },
       });
       await tx.studioSlot.update({

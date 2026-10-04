@@ -21,7 +21,8 @@ export default function CheckoutPage() {
           Checkout
         </h1>
         <p className="text-ash-600 mb-4">
-          Six short steps. Online payment only — no pay on delivery.
+          Six short steps. Cash on delivery, bank transfer or card — your
+          choice on each order.
         </p>
 
         <div className="grid gap-4 sm:grid-cols-[1fr_280px]">

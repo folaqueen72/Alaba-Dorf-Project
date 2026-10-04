@@ -12,6 +12,7 @@ type Order = {
   dept: string;
   orderStatus: string;
   paymentStatus: string;
+  paymentMethod: string;
   total: number;
   fulfillment: string;
   createdAt: string;
@@ -126,6 +127,13 @@ export function OrdersManager() {
                 <td className="py-2 pr-3 whitespace-nowrap">
                   {koboToNaira(o.total)}
                   <span className="block text-ash-600">{o.paymentStatus}</span>
+                  <span className="block text-ash-600">
+                    {o.paymentMethod === "CASH"
+                      ? "Cash"
+                      : o.paymentMethod === "TRANSFER"
+                        ? "Transfer"
+                        : "Card"}
+                  </span>
                 </td>
                 <td className="py-2 pr-3">
                   <Badge

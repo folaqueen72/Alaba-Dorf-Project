@@ -47,6 +47,7 @@ type Result = {
   ref: string;
   status: string;
   payment?: string;
+  method?: string;
   items?: Array<{ name: string; qty: number; unitPrice: number }>;
   total?: number;
   session?: string;
@@ -170,8 +171,13 @@ function TrackForm() {
                 Payment: {statusLabel(result.payment)}
               </Badge>
             ) : null}
+            {result.method === "CASH" && result.payment !== "PAID" ? (
+              <Badge status="info">Cash on delivery</Badge>
+            ) : null}
           </div>
-          {result.type === "order" && result.payment === "UNPAID" ? (
+          {result.type === "order" &&
+          result.payment === "UNPAID" &&
+          result.method !== "CASH" ? (
             <div className="mb-3">
               <Button onClick={payNow} disabled={paying}>
                 {paying ? "Opening payment…" : "Pay Online Now"}
@@ -180,6 +186,14 @@ function TrackForm() {
                 Card, transfer or USSD through Paystack.
               </p>
             </div>
+          ) : null}
+          {result.type === "order" &&
+          result.payment === "UNPAID" &&
+          result.method === "CASH" ? (
+            <p className="text-sm text-ash-600 mb-3">
+              No need to pay now — have your cash ready on collection or
+              delivery.
+            </p>
           ) : null}
           {result.type === "order" ? (
             <ul className="text-sm text-ash-600 mb-3">
@@ -242,8 +256,7 @@ export default function TrackPage() {
           Track your order
         </h1>
         <p className="text-ash-600 mb-4">
-          Na the same phone number you take order you go use here. No account
-          needed.
+          Use the same phone number you ordered with. No account needed.
         </p>
         <Suspense>
           <TrackForm />

@@ -23,6 +23,7 @@ type Body = {
   lines: Line[];
   customer: { name: string; phone: string; email?: string; address?: string };
   fulfillment: "PICKUP" | "DELIVERY";
+  paymentMethod?: "CASH" | "TRANSFER" | "CARD";
 };
 
 export async function POST(req: Request) {
@@ -57,6 +58,12 @@ export async function POST(req: Request) {
       throw new Error("Choose pickup or delivery.");
     if (body.fulfillment === "DELIVERY" && !body.customer.address?.trim())
       throw new Error("Delivery needs an address.");
+    const paymentMethod =
+      body.paymentMethod === "CASH" ||
+      body.paymentMethod === "TRANSFER" ||
+      body.paymentMethod === "CARD"
+        ? body.paymentMethod
+        : "CARD";
 
     const result = await prisma.$transaction(async (tx) => {
       const customer = await findOrCreateCustomer(
@@ -173,6 +180,7 @@ export async function POST(req: Request) {
           deliveryFee,
           total: subtotal + deliveryFee,
           fulfillment: body.fulfillment,
+          paymentMethod,
           deliveryName: customerInput.name,
           deliveryPhone: cleanPhone(customerInput.phone),
           deliveryAddr: customerInput.address,
@@ -183,6 +191,7 @@ export async function POST(req: Request) {
         total: order.total,
         email: customerEmail,
         name: customer.name,
+        paymentMethod,
       };
     });
 
@@ -197,7 +206,11 @@ export async function POST(req: Request) {
         ),
       });
     }
-    return Response.json({ orderNo: result.orderNo, total: result.total });
+    return Response.json({
+      orderNo: result.orderNo,
+      total: result.total,
+      paymentMethod: result.paymentMethod,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Order failed.";
     const conflict = /left|sold out|available/i.test(message);

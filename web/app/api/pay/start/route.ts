@@ -21,7 +21,14 @@ export async function POST(req: Request) {
       if (order.paymentStatus === "PAID")
         throw new Error("This order is already paid.");
       const payment = order.paymentId
-        ? await prisma.payment.findUnique({ where: { id: order.paymentId } })
+        ? await prisma.payment.update({
+            // Fresh reference per attempt — Paystack rejects repeats.
+            where: { id: order.paymentId },
+            data: {
+              reference: `ADO-${order.orderNo}-${Date.now()}`,
+              status: "UNPAID",
+            },
+          })
         : await prisma.payment.create({
             data: {
               provider: "paystack",
@@ -30,14 +37,15 @@ export async function POST(req: Request) {
               status: "UNPAID",
             },
           });
-      if (!payment) throw new Error("Payment record missing.");
       if (!order.paymentId) {
         await prisma.order.update({
           where: { id: order.id },
           data: { paymentId: payment.id, paymentStatus: "PROCESSING" },
         });
       }
-      const email = order.customer.email ?? `${order.customer.phone}@customer.local`;
+      const email =
+        order.customer.email?.trim() ||
+        `order-${order.orderNo.toLowerCase()}@alabadorf.ng`;
       const { authorizationUrl } = await startTransaction({
         email,
         amountKobo: order.total,
@@ -55,7 +63,9 @@ export async function POST(req: Request) {
       if (!booking.payment) throw new Error("Booking payment missing.");
       if (booking.payment.status === "PAID")
         throw new Error("This booking is already paid.");
-      const email = booking.customer.email ?? `${booking.customer.phone}@customer.local`;
+      const email =
+        booking.customer.email?.trim() ||
+        `booking-${booking.id.slice(0, 8)}@alabadorf.ng`;
       const { authorizationUrl } = await startTransaction({
         email,
         amountKobo: booking.payment.amount,

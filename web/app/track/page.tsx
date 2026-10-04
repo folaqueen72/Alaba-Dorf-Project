@@ -66,6 +66,7 @@ function TrackForm() {
   const [orderNo, setOrderNo] = useState(params.get("orderNo") ?? "");
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
+  const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
 
@@ -85,6 +86,26 @@ function TrackForm() {
       setError(err instanceof Error ? err.message : "Lookup failed.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function payNow() {
+    if (!result) return;
+    setPaying(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/pay/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ref: result.ref.replace(/^#/, "") }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Payment failed to start.");
+      window.location.href = data.url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Payment failed to start.");
+    } finally {
+      setPaying(false);
     }
   }
 
@@ -150,6 +171,16 @@ function TrackForm() {
               </Badge>
             ) : null}
           </div>
+          {result.type === "order" && result.payment === "UNPAID" ? (
+            <div className="mb-3">
+              <Button onClick={payNow} disabled={paying}>
+                {paying ? "Opening payment…" : "Pay Online Now"}
+              </Button>
+              <p className="text-sm text-ash-600 mt-1">
+                Card, transfer or USSD through Paystack.
+              </p>
+            </div>
+          ) : null}
           {result.type === "order" ? (
             <ul className="text-sm text-ash-600 mb-3">
               {(result.items ?? []).map((it, i) => (

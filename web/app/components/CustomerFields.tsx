@@ -8,6 +8,7 @@ export type CustomerInput = {
   name: string;
   phone: string;
   address: string;
+  email: string;
 };
 
 export function CustomerFields({
@@ -85,6 +86,19 @@ export function CustomerFields({
           />
         </label>
       ) : null}
+      <label className="block sm:col-span-2">
+        <span className="block text-sm font-semibold mb-1">
+          Email <span className="font-normal text-ash-600">(optional, for receipts)</span>
+        </span>
+        <input
+          type="email"
+          value={value.email}
+          onChange={(e) => set("email")(e.target.value)}
+          placeholder="you@example.com"
+          autoComplete="email"
+          className="w-full rounded-[10px] border border-ash-400 bg-white px-4 py-3 text-[15px] outline-none focus:border-lemon-600"
+        />
+      </label>
       </div>
     </div>
   );

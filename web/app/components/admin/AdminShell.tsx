@@ -3,14 +3,15 @@ import type { ReactNode } from "react";
 
 const nav = [
   { href: "/admin", label: "Dashboard" },
-  { href: "/admin", label: "Orders" },
-  { href: "/admin", label: "Inventory" },
-  { href: "/admin", label: "Animals" },
-  { href: "/admin", label: "Studio" },
-  { href: "/admin", label: "Menu" },
-  { href: "/admin", label: "Customers" },
-  { href: "/admin", label: "Reports" },
-  { href: "/admin", label: "Activity" },
+  { href: "/admin/orders", label: "Orders" },
+  { href: "/admin/inventory", label: "Inventory" },
+  { href: "/admin/animals", label: "Animals" },
+  { href: "/admin/studio", label: "Studio" },
+  { href: "/admin/menu", label: "Menu" },
+  { href: "/admin/customers", label: "Customers" },
+  { href: "/admin/reports", label: "Reports" },
+  { href: "/admin/activity", label: "Activity" },
+  { href: "/admin/users", label: "Admins" },
 ];
 
 export function AdminShell({ children }: { children: ReactNode }) {

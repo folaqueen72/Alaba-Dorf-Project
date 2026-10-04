@@ -9,14 +9,6 @@ const adapter = new PrismaPg({
 });
 const prisma = new PrismaClient({ adapter });
 
-function nextSaturday() {
-  const d = new Date();
-  const delta = (6 - d.getDay() + 7) % 7 || 7;
-  d.setDate(d.getDate() + delta);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
 async function main() {
   await prisma.counter.upsert({
     where: { id: "order" },
@@ -87,20 +79,26 @@ async function main() {
   void basic;
   void premium;
 
-  const saturday = nextSaturday();
-  for (const [start, end] of [
-    ["10:00", "11:00"],
-    ["11:00", "12:00"],
-    ["12:00", "13:00"],
-    ["13:00", "14:00"],
-  ]) {
-    await prisma.studioSlot.upsert({
-      where: {
-        date_startTime: { date: saturday, startTime: start },
-      },
-      update: {},
-      create: { date: saturday, startTime: start, endTime: end },
-    });
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  // Rolling 14-day studio calendar (admins extend/block in the calendar UI).
+  for (let d = 0; d < 14; d++) {
+    const day = new Date(today);
+    day.setDate(today.getDate() + d);
+    for (const [start, end] of [
+      ["10:00", "11:00"],
+      ["11:00", "12:00"],
+      ["12:00", "13:00"],
+      ["13:00", "14:00"],
+      ["14:00", "15:00"],
+      ["15:00", "16:00"],
+    ]) {
+      await prisma.studioSlot.upsert({
+        where: { date_startTime: { date: day, startTime: start } },
+        update: {},
+        create: { date: day, startTime: start, endTime: end },
+      });
+    }
   }
 
   for (const item of [
@@ -118,7 +116,7 @@ async function main() {
     });
   }
 
-  console.log("Seed OK:", { cow: cow.tag, saturday: saturday.toDateString() });
+  console.log("Seed OK:", { cow: cow.tag });
 }
 
 main()

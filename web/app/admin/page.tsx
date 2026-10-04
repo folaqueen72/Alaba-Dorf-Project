@@ -1,37 +1,95 @@
+import Link from "next/link";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Alert } from "../components/ui/Alert";
 import { requireAdmin } from "@/lib/requireAdmin";
+import { prisma } from "@/lib/prisma";
+import { koboToNaira } from "@/lib/format";
 
-const STATS = [
-  { label: "Orders", value: "24" },
-  { label: "Sales", value: "₦385,000" },
-  { label: "Egg Stock", value: "63 crates" },
-  { label: "Meat Available", value: "87 kg" },
-  { label: "Studio Bookings", value: "6" },
-  { label: "Pending Deliveries", value: "8" },
-];
-
-const RECENT = [
-  { no: "#ADO1042", customer: "Adeola", dept: "Eatery", status: "preparing" as const, label: "Preparing" },
-  { no: "#ADO1041", customer: "Musa", dept: "Farm", status: "confirmed" as const, label: "Confirmed" },
-  { no: "#ADO1040", customer: "Grace", dept: "Studio", status: "pending" as const, label: "Pending Payment" },
-  { no: "#ADO1039", customer: "Tunde", dept: "Eatery", status: "failed" as const, label: "Failed Payment" },
-];
+export const dynamic = "force-dynamic";
 
 export default async function AdminDashboard() {
-  await requireAdmin();
+  const { profile } = await requireAdmin();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [
+    todaysOrders,
+    paidSales,
+    eggInv,
+    animals,
+    upcomingBookings,
+    pendingOrders,
+    readyOrders,
+    failedCount,
+  ] = await Promise.all([
+    prisma.order.count({ where: { createdAt: { gte: today } } }),
+    prisma.order.aggregate({
+      where: { createdAt: { gte: today }, paymentStatus: "PAID" },
+      _sum: { total: true },
+    }),
+    prisma.eggInventory.findUnique({ where: { id: "eggs" } }),
+    prisma.animal.findMany(),
+    prisma.booking.count({
+      where: {
+        status: { in: ["CONFIRMED", "UPCOMING"] },
+        slot: { date: { gte: today } },
+      },
+    }),
+    prisma.order.count({ where: { orderStatus: "CONFIRMED" } }),
+    prisma.order.count({
+      where: { orderStatus: { in: ["READY", "OUT_FOR_DELIVERY"] } },
+    }),
+    prisma.order.count({ where: { paymentStatus: "FAILED" } }),
+  ]);
+
+  const eggAvail = eggInv
+    ? eggInv.totalCrates - eggInv.reservedCrates - eggInv.soldCrates
+    : 0;
+  const meatAvail = animals.reduce(
+    (s, a) => s + Number(a.availableKg),
+    0
+  );
+
+  const attention: string[] = [];
+  if (pendingOrders > 0)
+    attention.push(`${pendingOrders} paid order(s) not yet in preparation`);
+  if (readyOrders > 0)
+    attention.push(`${readyOrders} order(s) ready or out for delivery`);
+  if (failedCount > 0) attention.push(`${failedCount} failed payment(s)`);
+  if (eggAvail < 20 && eggAvail >= 0)
+    attention.push(`Egg stock low (${eggAvail} crates)`);
+  for (const a of animals) {
+    const total = Number(a.totalKg);
+    if (total > 0 && Number(a.availableKg) / total < 0.1)
+      attention.push(`${a.tag} almost fully reserved`);
+  }
+
+  const stats = [
+    { label: "Orders today", value: String(todaysOrders) },
+    {
+      label: "Sales today",
+      value: koboToNaira(paidSales._sum.total ?? 0),
+    },
+    { label: "Egg stock", value: `${eggAvail} crates` },
+    { label: "Meat available", value: `${Math.round(meatAvail)} kg` },
+    { label: "Upcoming bookings", value: String(upcomingBookings) },
+  ];
+
   return (
     <>
-      <h1 className="font-display text-3xl font-semibold mb-1">
-        Today&apos;s Overview
-      </h1>
+      <div className="flex items-center justify-between mb-1">
+        <h1 className="font-display text-3xl font-semibold">
+          Today&apos;s Overview
+        </h1>
+        <Badge status="info">{profile.role}</Badge>
+      </div>
       <p className="text-ash-600 mb-4">
         Everything needing attention, at a glance.
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {STATS.map((s) => (
+        {stats.map((s) => (
           <div
             key={s.label}
             className="border border-ash-200 rounded-[10px] p-3 bg-cream"
@@ -45,37 +103,28 @@ export default async function AdminDashboard() {
       </div>
 
       <div className="mt-4">
-        <Alert title="3 orders require attention">
-          2 paid but not processed · 1 failed payment · egg stock low.
-        </Alert>
-      </div>
-
-      <Card title="Recent orders" className="mt-4">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm mt-2">
-            <thead>
-              <tr className="text-left text-ash-600 border-b border-ash-200">
-                <th className="py-2 pr-3">Order</th>
-                <th className="py-2 pr-3">Customer</th>
-                <th className="py-2 pr-3">Dept</th>
-                <th className="py-2">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {RECENT.map((o) => (
-                <tr key={o.no} className="border-b border-ash-100">
-                  <td className="py-2 pr-3 font-bold">{o.no}</td>
-                  <td className="py-2 pr-3">{o.customer}</td>
-                  <td className="py-2 pr-3">{o.dept}</td>
-                  <td className="py-2">
-                    <Badge status={o.status}>{o.label}</Badge>
-                  </td>
-                </tr>
+        {attention.length > 0 ? (
+          <Alert title={`${attention.length} item(s) require attention`}>
+            <ul className="list-disc ml-5">
+              {attention.map((a) => (
+                <li key={a}>{a}</li>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+            </ul>
+            <Link
+              href="/admin/orders"
+              className="inline-block mt-2 font-bold text-lemon-800 underline underline-offset-4"
+            >
+              Open orders
+            </Link>
+          </Alert>
+        ) : (
+          <Card>
+            <p className="font-semibold">
+              All clear. Nothing needs attention right now.
+            </p>
+          </Card>
+        )}
+      </div>
     </>
   );
 }

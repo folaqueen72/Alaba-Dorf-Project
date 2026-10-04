@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { assertCustomer, findOrCreateCustomer } from "@/lib/orders";
+import { sendEmail, bookingEmail } from "@/lib/email";
 
 type Body = {
   sessionTypeId: string;
@@ -39,6 +40,8 @@ export async function POST(req: Request) {
         customerInput,
         sessionUserId
       );
+      const customerEmail = customer.email;
+      const customerName = customer.name;
       // Lock the slot row: concurrent bookings serialize here, so a slot
       // can never be double-booked (PRD §8.3).
       const locked = await tx.$queryRaw<Array<{ id: string; status: string }>>`
@@ -73,10 +76,30 @@ export async function POST(req: Request) {
         where: { id: slot.id },
         data: { status: "BOOKED" },
       });
-      return { bookingId: booking.id, amount: sessionType.price };
+      return {
+        bookingId: booking.id,
+        amount: sessionType.price,
+        email: customerEmail,
+        name: customerName,
+        session: sessionType.name,
+      };
     });
 
-    return Response.json(result);
+    if (result.email) {
+      await sendEmail({
+        to: result.email,
+        subject: "Studio booking received",
+        html: bookingEmail(
+          result.name,
+          result.bookingId.slice(0, 8).toUpperCase(),
+          result.session
+        ),
+      });
+    }
+    return Response.json({
+      bookingId: result.bookingId,
+      amount: result.amount,
+    });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Booking failed.";
     const conflict = /just taken/i.test(message);

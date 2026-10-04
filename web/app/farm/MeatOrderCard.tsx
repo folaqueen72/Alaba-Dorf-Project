@@ -28,6 +28,7 @@ export function MeatOrderCard({
     name: "",
     phone: "",
     address: "",
+    email: "",
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);

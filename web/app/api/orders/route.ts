@@ -7,6 +7,8 @@ import {
   findOrCreateCustomer,
   nextOrderNo,
 } from "@/lib/orders";
+import { sendEmail, orderEmail } from "@/lib/email";
+import { koboToNaira } from "@/lib/format";
 
 // V1: delivery fee is flat and zero until the business configures it (Phase 4 settings).
 const DELIVERY_FEE_KOBO = 0;
@@ -62,6 +64,7 @@ export async function POST(req: Request) {
         customerInput,
         sessionUserId
       );
+      const customerEmail = customer.email;
       const items: Prisma.InputJsonValue[] = [];
       let subtotal = 0;
 
@@ -175,10 +178,26 @@ export async function POST(req: Request) {
           deliveryAddr: customerInput.address,
         },
       });
-      return { orderNo: order.orderNo, total: order.total };
+      return {
+        orderNo: order.orderNo,
+        total: order.total,
+        email: customerEmail,
+        name: customer.name,
+      };
     });
 
-    return Response.json(result);
+    if (result.email) {
+      await sendEmail({
+        to: result.email,
+        subject: `Order received — #${result.orderNo}`,
+        html: orderEmail(
+          result.name,
+          result.orderNo,
+          koboToNaira(result.total)
+        ),
+      });
+    }
+    return Response.json({ orderNo: result.orderNo, total: result.total });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Order failed.";
     const conflict = /left|sold out|available/i.test(message);

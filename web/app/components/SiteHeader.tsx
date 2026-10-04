@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { AuthStatus } from "./AuthStatus";
 
 const links = [
   { href: "/farm", label: "Farm" },
@@ -38,6 +39,7 @@ export function SiteHeader() {
               {l.label}
             </Link>
           ))}
+          <AuthStatus />
         </nav>
       </div>
     </header>

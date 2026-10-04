@@ -176,7 +176,7 @@ function TrackForm() {
           )}
           {result.status === "CANCELLED" ? (
             <p className="font-semibold">
-              This one don cancel. Abeg place a fresh order.
+              This order was cancelled. Please place a fresh order.
             </p>
           ) : (
             <ul>

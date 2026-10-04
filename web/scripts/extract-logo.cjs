@@ -11,10 +11,10 @@ async function main() {
   const meta = await img.metadata();
   console.log("source:", meta.width, "x", meta.height);
 
-  // The badge fills the frame width; centre it vertically.
-  const side = Math.min(meta.width, Math.round(meta.height * 0.76));
-  const left = Math.round((meta.width - side) / 2);
-  const top = Math.round(meta.height * 0.5 - side / 2);
+  // The badge fills most of the frame; crop inside the grey fabric rim.
+  const side = 2700;
+  const left = 190;
+  const top = 695;
   console.log("crop:", { left, top, side });
 
   const SIZE = 512;

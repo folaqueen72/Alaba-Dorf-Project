@@ -38,7 +38,7 @@ export function StudioBooking({
     return (
       <OrderSuccess
         ref={placed}
-        note="Your slot don lock — nobody else fit book am. We go confirm payment and session details with you."
+        note="Your slot is locked — no one else can book it. We will confirm payment and session details with you."
       />
     );
   }
@@ -91,7 +91,7 @@ export function StudioBooking({
 
       {dates.length === 0 ? (
         <p className="font-semibold">
-          No open slots right now. Check back — new dates dey drop regularly.
+          No open slots right now. Check back — new dates are added regularly.
         </p>
       ) : (
         dates.map((d) => (

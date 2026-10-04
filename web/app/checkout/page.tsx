@@ -2,7 +2,6 @@ import { SiteHeader } from "../components/SiteHeader";
 import { SiteFooter } from "../components/SiteFooter";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
 
 const STEPS = [
   "Review order",
@@ -26,10 +25,10 @@ export default function CheckoutPage() {
         </p>
 
         <div className="grid gap-4 sm:grid-cols-[1fr_280px]">
-          <Card title="Step 1 — Review order">
+          <Card title="How checkout works">
             <p className="text-sm text-ash-600 mt-1">
-              Live checkout with payment arrives in Phase 3. This screen shows
-              the agreed flow:
+              Every department checks out the same way — details and payment
+              happen right on that department&apos;s page:
             </p>
             <ol className="mt-3 space-y-2">
               {STEPS.map((s, i) => (
@@ -48,11 +47,29 @@ export default function CheckoutPage() {
               ))}
             </ol>
           </Card>
-          <Card title="Your details">
+          <Card title="Start an order">
             <div className="space-y-3 mt-2">
-              <Input label="Full name" placeholder="Adeola Balogun" />
-              <Input label="Phone number" placeholder="0803 000 0000" />
-              <Button className="w-full">Continue</Button>
+              <p className="text-sm text-ash-600">
+                Pick a department to begin — your details and totals are
+                handled there.
+              </p>
+              <div className="grid gap-2">
+                <a href="/farm">
+                  <Button className="w-full" type="button">
+                    Buy Farm Produce
+                  </Button>
+                </a>
+                <a href="/eatery">
+                  <Button className="w-full" type="button" variant="outline">
+                    View the Menu
+                  </Button>
+                </a>
+                <a href="/studio">
+                  <Button className="w-full" type="button" variant="outline">
+                    Book a Session
+                  </Button>
+                </a>
+              </div>
             </div>
           </Card>
         </div>

@@ -54,8 +54,8 @@ export default async function StudioPage() {
           Photo Studio
         </h1>
         <p className="text-ash-600 mb-4">
-          Pick a session, grab a free slot. Once you book am, e don lock — no
-          double booking.
+          Pick a session and a free slot. Once booked, the slot is locked to
+          you — double bookings are impossible.
         </p>
         <Card>
           <StudioBooking sessions={sessionLines} slots={slotLines} />

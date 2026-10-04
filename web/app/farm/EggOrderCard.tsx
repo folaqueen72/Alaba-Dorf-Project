@@ -39,7 +39,7 @@ export function EggOrderCard({
       <OrderSuccess
         ref={placed.ref}
         total={placed.total}
-        note="We don reserve your crates. Pay online (coming) or wait for our confirmation call — then come pick up or expect delivery."
+        note="Your crates are reserved. Online payment is coming soon — for now, wait for our confirmation call, then collect your order or expect delivery."
       />
     );
   }
@@ -84,7 +84,7 @@ export function EggOrderCard({
       </p>
       {soldOut ? (
         <p className="mt-4 font-semibold">
-          Eggs don finish for now. Check back soon — new stock dey come.
+          Eggs are finished for now. Check back soon — new stock is on the way.
         </p>
       ) : (
         <form onSubmit={submit} className="mt-4 space-y-4">

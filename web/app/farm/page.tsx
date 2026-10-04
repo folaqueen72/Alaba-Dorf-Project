@@ -26,8 +26,8 @@ export default async function FarmPage() {
           Farm — Eggs &amp; Meat Sharing
         </h1>
         <p className="text-ash-600 mb-4">
-          Fresh crates and shared animals. Stock na live — wetin you see na
-          wetin dey.
+          Fresh crates and shared animals. Stock is live — what you see is
+          what is available.
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -39,8 +39,8 @@ export default async function FarmPage() {
 
           <Card title="Cow & Pig Sharing">
             <p className="text-sm text-ash-600 mt-1 mb-3">
-              Reserve kilos in your name. Final weight and payment na after the
-              animal don ready.
+              Reserve kilos in your name. Final weight and payment are sorted
+              out after the animal is ready.
             </p>
             <div className="space-y-2">
               {animals.map((a) => (

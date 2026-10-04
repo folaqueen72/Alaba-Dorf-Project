@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import type { Prisma } from "@prisma/client";
 import {
   assertCustomer,
@@ -35,14 +36,32 @@ export async function POST(req: Request) {
       throw new Error("Unknown department.");
     if (!Array.isArray(body.lines) || body.lines.length === 0)
       throw new Error("Your cart is empty.");
-    assertCustomer(body.customer);
+    // Signed-in customers order under their account; guests order by phone.
+    const session = await auth.api
+      .getSession({ headers: req.headers })
+      .catch(() => null);
+    const rawUser = session?.user as
+      | { id: string; name?: string; isAnonymous?: boolean }
+      | undefined;
+    const sessionUserId =
+      rawUser && !rawUser.isAnonymous ? rawUser.id : null;
+    const customerInput = {
+      ...body.customer,
+      name:
+        body.customer.name?.trim() || rawUser?.name || "",
+    };
+    assertCustomer(customerInput);
     if (body.fulfillment !== "PICKUP" && body.fulfillment !== "DELIVERY")
       throw new Error("Choose pickup or delivery.");
     if (body.fulfillment === "DELIVERY" && !body.customer.address?.trim())
       throw new Error("Delivery needs an address.");
 
     const result = await prisma.$transaction(async (tx) => {
-      const customer = await findOrCreateCustomer(tx, body.customer);
+      const customer = await findOrCreateCustomer(
+        tx,
+        customerInput,
+        sessionUserId
+      );
       const items: Prisma.InputJsonValue[] = [];
       let subtotal = 0;
 
@@ -151,9 +170,9 @@ export async function POST(req: Request) {
           deliveryFee,
           total: subtotal + deliveryFee,
           fulfillment: body.fulfillment,
-          deliveryName: body.customer.name,
-          deliveryPhone: cleanPhone(body.customer.phone),
-          deliveryAddr: body.customer.address,
+          deliveryName: customerInput.name,
+          deliveryPhone: cleanPhone(customerInput.phone),
+          deliveryAddr: customerInput.address,
         },
       });
       return { orderNo: order.orderNo, total: order.total };

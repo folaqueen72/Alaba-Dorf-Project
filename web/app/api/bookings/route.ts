@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { assertCustomer, findOrCreateCustomer } from "@/lib/orders";
 
 type Body = {
@@ -16,12 +17,28 @@ export async function POST(req: Request) {
   }
 
   try {
-    assertCustomer(body.customer);
+    const session = await auth.api
+      .getSession({ headers: req.headers })
+      .catch(() => null);
+    const rawUser = session?.user as
+      | { id: string; name?: string; isAnonymous?: boolean }
+      | undefined;
+    const sessionUserId =
+      rawUser && !rawUser.isAnonymous ? rawUser.id : null;
+    const customerInput = {
+      ...body.customer,
+      name: body.customer.name?.trim() || rawUser?.name || "",
+    };
+    assertCustomer(customerInput);
     if (!body.sessionTypeId || !body.slotId)
       throw new Error("Pick a session and a time slot.");
 
     const result = await prisma.$transaction(async (tx) => {
-      const customer = await findOrCreateCustomer(tx, body.customer);
+      const customer = await findOrCreateCustomer(
+        tx,
+        customerInput,
+        sessionUserId
+      );
       // Lock the slot row: concurrent bookings serialize here, so a slot
       // can never be double-booked (PRD §8.3).
       const locked = await tx.$queryRaw<Array<{ id: string; status: string }>>`

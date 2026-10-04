@@ -45,7 +45,7 @@ export function EateryOrder({ menu }: { menu: MenuLine[] }) {
       <OrderSuccess
         ref={placed.ref}
         total={placed.total}
-        note="Kitchen don receive your order. Pay online (coming) — food go ready for pickup or delivery sharp sharp."
+        note="The kitchen has received your order. Online payment is coming soon — your food will be ready for collection or delivery."
       />
     );
   }
@@ -85,7 +85,7 @@ export function EateryOrder({ menu }: { menu: MenuLine[] }) {
     <form onSubmit={submit}>
       {menu.length === 0 ? (
         <p className="font-semibold">
-          Kitchen dey on break — menu go show here when food ready.
+          The kitchen is on break — the menu will appear here when food is ready.
         </p>
       ) : null}
       {menu.map((m) => (
@@ -165,7 +165,7 @@ export function EateryOrder({ menu }: { menu: MenuLine[] }) {
               : `Place Order · ${koboToNaira(total)} (${count} items)`}
           </Button>
           <p className="text-sm text-ash-600">
-            Food orders na prepaid — online payment dey come for the next
+            Food orders are prepaid — online payment arrives in the next
             update.
           </p>
         </div>

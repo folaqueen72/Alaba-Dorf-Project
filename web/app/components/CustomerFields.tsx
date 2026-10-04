@@ -1,5 +1,9 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import Link from "next/link";
+import { authClient } from "@/lib/auth-client";
+
 export type CustomerInput = {
   name: string;
   phone: string;
@@ -15,9 +19,33 @@ export function CustomerFields({
   onChange: (next: CustomerInput) => void;
   needAddress: boolean;
 }) {
+  const { data: session } = authClient.useSession();
+  const raw = session?.user as { name?: string; isAnonymous?: boolean } | undefined;
+  const authed = raw && !raw.isAnonymous ? raw : null;
+  const filled = useRef(false);
+  useEffect(() => {
+    if (authed?.name && !filled.current && !value.name) {
+      filled.current = true;
+      onChange({ ...value, name: authed.name });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed]);
   const set = (k: keyof CustomerInput) => (v: string) =>
     onChange({ ...value, [k]: v });
   return (
+    <div>
+      {authed ? (
+        <p className="text-sm text-ash-600 mb-3">
+          Signed in as <b>{authed.name}</b> — details prefilled.
+        </p>
+      ) : (
+        <p className="text-sm text-ash-600 mb-3">
+          <Link href="/login" className="font-bold text-lemon-800 underline underline-offset-4">
+            Sign in
+          </Link>{" "}
+          to skip typing your details next time — or continue as a guest.
+        </p>
+      )}
     <div className="grid gap-3 sm:grid-cols-2">
       <label className="block">
         <span className="block text-sm font-semibold mb-1">Full name</span>
@@ -57,6 +85,7 @@ export function CustomerFields({
           />
         </label>
       ) : null}
+      </div>
     </div>
   );
 }

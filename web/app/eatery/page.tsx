@@ -37,8 +37,8 @@ export default async function EateryPage() {
           Eatery — Hot Food
         </h1>
         <p className="text-ash-600 mb-4">
-          Wetin dey kitchen na wetin you see. Add to cart, drop your details,
-          done.
+          Only what is in the kitchen is listed here. Add to cart, enter your
+          details, done.
         </p>
         <Card>
           <EateryOrder menu={menu} />

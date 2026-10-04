@@ -21,7 +21,7 @@ export function SiteFooter() {
           <p className="text-ash-200">
             Farm · Cow &amp; Pig Sharing · Photo Studio · Eatery.
             <br />
-            Order online, pay online, carry your goods.
+            Order online, pay online, collect your goods.
           </p>
         </div>
         <div>

@@ -40,7 +40,7 @@ export function MeatOrderCard({
       <OrderSuccess
         ref={placed.ref}
         total={placed.total}
-        note={`${kg} kg reserved on ${tag} in your name. We go call you on final weight and payment steps.`}
+        note={`${kg} kg reserved on ${tag} in your name. We will call you about the final weight and payment steps.`}
       />
     );
   }

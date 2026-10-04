@@ -1,0 +1,348 @@
+// Alaba Dorf data model — PostgreSQL + Prisma.
+// Money is stored in kobo (integer). Never store image bytes here, only R2 keys.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Better Auth (managed by the library, do not hand-edit rows) ----------
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+
+  adminProfile AdminProfile?
+  customer     Customer?
+  activityLogs ActivityLog[] @relation("ActorLogs")
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verification")
+}
+
+// ---------- App roles ----------
+
+enum AdminRole {
+  TOP
+  FARM
+  EATERY
+  STUDIO
+}
+
+model AdminProfile {
+  userId String    @id
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role   AdminRole
+  active Boolean   @default(true)
+
+  @@map("admin_profile")
+}
+
+model Permission {
+  id       String @id @default(cuid())
+  userId   String
+  resource String // orders | payments | stock | prices | products | bookings | customers | reports
+  action   String // view | create | edit | status | manage
+
+  @@unique([userId, resource, action])
+  @@map("permission")
+}
+
+// ---------- Customers (guest or registered) ----------
+
+model Customer {
+  id        String  @id @default(cuid())
+  userId    String? @unique // null = pure guest; backfilled on guest -> account upgrade
+  user      User?   @relation(fields: [userId], references: [id])
+  name      String
+  phone     String  @unique
+  email     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders       Order[]
+  bookings     Booking[]
+  reservations AnimalReservation[]
+
+  @@map("customer")
+}
+
+// ---------- Farm: eggs ----------
+
+enum ProductStatus {
+  AVAILABLE
+  LOW
+  SOLD_OUT
+  INACTIVE
+}
+
+model EggInventory {
+  id            String        @id @default("eggs")
+  totalCrates   Int           @default(0)
+  reservedCrates Int          @default(0)
+  soldCrates    Int           @default(0)
+  pricePerCrate Int           @default(0) // kobo
+  status        ProductStatus @default(AVAILABLE)
+  updatedAt     DateTime      @updatedAt
+
+  @@map("egg_inventory")
+}
+
+// ---------- Farm: cow & pig sharing ----------
+
+enum AnimalType {
+  COW
+  PIG
+}
+
+model Animal {
+  id           String        @id @default(cuid())
+  type         AnimalType
+  tag          String        @unique // e.g. Cow #024
+  totalKg      Decimal       @db.Decimal(10, 2)
+  availableKg  Decimal       @db.Decimal(10, 2)
+  pricePerKg   Int // kobo
+  status       ProductStatus @default(AVAILABLE)
+  imageKey     String? // R2 object key
+  description  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  reservations AnimalReservation[]
+
+  @@map("animal")
+}
+
+model AnimalReservation {
+  id        String        @id @default(cuid())
+  animalId  String
+  animal    Animal        @relation(fields: [animalId], references: [id])
+  customerId String
+  customer  Customer      @relation(fields: [customerId], references: [id])
+  kg        Decimal       @db.Decimal(10, 2)
+  amount    Int // kobo
+  paymentId String?       @unique
+  payment   Payment?      @relation(fields: [paymentId], references: [id])
+  createdAt DateTime      @default(now())
+
+  @@map("animal_reservation")
+}
+
+// ---------- Photo studio ----------
+
+model SessionType {
+  id          String   @id @default(cuid())
+  name        String
+  durationMin Int
+  price       Int // kobo
+  description String?
+  coverKey    String? // R2 object key
+  active      Boolean  @default(true)
+
+  bookings Booking[]
+
+  @@map("session_type")
+}
+
+enum SlotStatus {
+  AVAILABLE
+  BOOKED
+  BLOCKED
+}
+
+model StudioSlot {
+  id        String     @id @default(cuid())
+  date      DateTime   @db.Date
+  startTime String // "10:00"
+  endTime   String // "11:00"
+  status    SlotStatus @default(AVAILABLE)
+  booking   Booking?
+
+  @@unique([date, startTime])
+  @@map("studio_slot")
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  UPCOMING
+  COMPLETED
+  CANCELLED
+}
+
+model Booking {
+  id            String        @id @default(cuid())
+  customerId    String
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  sessionTypeId String
+  sessionType   SessionType   @relation(fields: [sessionTypeId], references: [id])
+  slotId        String        @unique
+  slot          StudioSlot    @relation(fields: [slotId], references: [id])
+  status        BookingStatus @default(PENDING_PAYMENT)
+  paymentId     String?       @unique
+  payment       Payment?      @relation(fields: [paymentId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@map("booking")
+}
+
+// ---------- Eatery ----------
+
+model MenuItem {
+  id          String   @id @default(cuid())
+  name        String
+  price       Int // kobo
+  imageKey    String? // R2 object key
+  description String?
+  available   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("menu_item")
+}
+
+// ---------- Orders & payments ----------
+
+enum Department {
+  FARM
+  EATERY
+}
+
+enum Fulfillment {
+  PICKUP
+  DELIVERY
+}
+
+enum PaymentStatus {
+  UNPAID
+  PROCESSING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum OrderStatus {
+  PENDING_PAYMENT
+  CONFIRMED
+  PREPARING
+  READY
+  OUT_FOR_DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+model Order {
+  id            String        @id @default(cuid())
+  orderNo       String        @unique // ADO-{sequence}
+  dept          Department
+  customerId    String
+  customer      Customer      @relation(fields: [customerId], references: [id])
+  items         Json // [{kind, refId, name, qty, unitPrice}]
+  subtotal      Int // kobo
+  deliveryFee   Int           @default(0) // kobo
+  total         Int // kobo
+  fulfillment   Fulfillment   @default(PICKUP)
+  deliveryName  String?
+  deliveryPhone String?
+  deliveryAddr  String?
+  paymentStatus PaymentStatus @default(UNPAID)
+  orderStatus   OrderStatus   @default(PENDING_PAYMENT)
+  paymentId     String?       @unique
+  payment       Payment?      @relation(fields: [paymentId], references: [id])
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([dept, orderStatus])
+  @@index([customerId])
+  @@map("order")
+}
+
+model Payment {
+  id         String        @id @default(cuid())
+  provider   String        @default("paystack")
+  reference  String        @unique
+  amount     Int // kobo
+  status     PaymentStatus @default(UNPAID)
+  rawPayload Json?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  order       Order?
+  booking     Booking?
+  reservation AnimalReservation?
+
+  @@map("payment")
+}
+
+// ---------- Accountability ----------
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation("ActorLogs", fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  before    Json?
+  after     Json?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@map("activity_log")
+}

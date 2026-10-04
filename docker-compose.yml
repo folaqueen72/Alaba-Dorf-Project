@@ -1,0 +1,59 @@
+# Alaba Dorf — local hosting stack (Phase 6 target, documented in Phase 0).
+# Dev right now: `npm run dev` in web/ + local PostgreSQL on localhost:5432.
+# Production on the outlet's own machine: `docker compose up -d`.
+# Public HTTPS without port-forwarding: add a Cloudflare Tunnel pointing at caddy:80.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: alaba
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB: alaba
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    secrets:
+      - db_password
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alaba"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://alaba:${DB_PASSWORD}@postgres:5432/alaba
+      BETTER_AUTH_SECRET_FILE: /run/secrets/auth_secret
+    secrets:
+      - db_password
+      - auth_secret
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - web
+
+volumes:
+  pgdata:
+  caddy_data:
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  auth_secret:
+    file: ./secrets/auth_secret.txt

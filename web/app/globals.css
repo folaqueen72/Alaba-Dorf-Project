@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+  /* Deep lemon green — primary brand, flat fills only, no gradients */
+  --color-lemon-50: #f7faec;
+  --color-lemon-100: #edf4d7;
+  --color-lemon-500: #7ab50f;
+  --color-lemon-600: #6b9e0e;
+  --color-lemon-700: #557f0a;
+  --color-lemon-800: #4c7500;
+  --color-lemon-900: #3f6105;
+
+  /* Ash — borders, secondary text */
+  --color-ash-100: #f1f2ec;
+  --color-ash-200: #e4e6dd;
+  --color-ash-400: #b4b8a6;
+  --color-ash-600: #6f7362;
+  --color-ash-800: #33362b;
+
+  --color-cream: #fafaf6;
+  --color-ink: #141610;
+
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-sans: "Public Sans", -apple-system, "Segoe UI", sans-serif;
+}
+
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}

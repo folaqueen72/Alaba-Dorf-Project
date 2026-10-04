@@ -41,9 +41,10 @@ React (Vite) + NestJS/Express API + PostgreSQL. More flexible, more ops overhead
 
 ## 1. Design System + UX (1-2 weeks)
 
+- **Palette (flat, no gradients):** Deep lemon green `#6B9E0E` (primary) / dark `#4C7500` / tint `#EDF4D7`; White `#FFFFFF` + off-white `#FAFAF6`; Ash scale `#E4E6DD → #B4B8A6 → #6F7362 → #33362B`; Black `#141610`
+- **Type:** Display `Fraunces` (organic serif, headings) + Body `Public Sans` (humanist sans) — avoids generic AI-looking geometric sans pairings
+- **Rules:** solid fills only, 1px ash borders, 12px radius cards, status badges in lemon/ash/black
 - Mobile-first breakpoints: 360px → 768px → 1024px+
-- Tokens: colors (primary farm-green, accent eatery-orange, neutrals), typography
-  (1 display + 1 body, e.g. Inter), spacing, radius, shadows
 - Core components: Button, Input, Card, Badge (order status), Quantity stepper,
   Slot picker, Cart row, Data table + filters, Alert/Toast, Modal/Sheet
 - Customer flows to wireframe: Homepage → Farm/Eggs → Meat sharing →

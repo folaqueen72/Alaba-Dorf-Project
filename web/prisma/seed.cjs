@@ -37,7 +37,7 @@ async function main() {
       tag: "Cow #024",
       totalKg: "420.00",
       availableKg: "420.00",
-      pricePerKg: 0,
+      pricePerKg: 850000,
       status: "AVAILABLE",
     },
   });
@@ -49,7 +49,7 @@ async function main() {
       tag: "Pig #011",
       totalKg: "95.00",
       availableKg: "95.00",
-      pricePerKg: 0,
+      pricePerKg: 700000,
       status: "AVAILABLE",
     },
   });
@@ -61,7 +61,7 @@ async function main() {
       id: "seed-basic",
       name: "Basic Session",
       durationMin: 30,
-      price: 0,
+      price: 1500000,
       active: true,
     },
   });
@@ -72,7 +72,7 @@ async function main() {
       id: "seed-premium",
       name: "Premium Session",
       durationMin: 60,
-      price: 0,
+      price: 3000000,
       active: true,
     },
   });

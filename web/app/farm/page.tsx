@@ -49,11 +49,7 @@ export default async function FarmPage() {
                   animalId={a.id}
                   tag={a.tag}
                   availableKg={Number(a.availableKg)}
-                  priceLabel={
-                    a.pricePerKg > 0
-                      ? `${koboToNaira(a.pricePerKg)}/kg`
-                      : "Price on confirmation"
-                  }
+                  pricePerKg={a.pricePerKg}
                   active={a.status === "AVAILABLE"}
                 />
               ))}

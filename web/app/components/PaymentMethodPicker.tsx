@@ -23,15 +23,20 @@ const OPTIONS: Array<{ value: PayMethod; title: string; desc: string }> = [
 export function PaymentMethodPicker({
   value,
   onChange,
+  allowCash = true,
 }: {
   value: PayMethod;
   onChange: (next: PayMethod) => void;
+  allowCash?: boolean;
 }) {
+  const options = allowCash
+    ? OPTIONS
+    : OPTIONS.filter((o) => o.value !== "CASH");
   return (
     <div>
       <p className="text-sm font-semibold mb-2">How do you want to pay?</p>
       <div className="grid gap-2">
-        {OPTIONS.map((o) => (
+        {options.map((o) => (
           <button
             key={o.value}
             type="button"

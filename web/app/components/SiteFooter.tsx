@@ -47,6 +47,12 @@ export function SiteFooter() {
         <div>
           <p className="font-bold mb-2">Visit Us</p>
           <p className="text-ash-200">
+            Behind Bodmas School, Ojoyeye, Olodo, Ibadan.
+          </p>
+          <a href="tel:09011544504" className="font-bold">
+            0901 154 4504
+          </a>
+          <p className="text-ash-200 mt-1">
             Come pick up daily, or choose delivery for farm and food orders.
           </p>
           <Link

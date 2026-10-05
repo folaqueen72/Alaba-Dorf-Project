@@ -29,6 +29,7 @@ export function StudioBooking({
 }) {
   const [sessionId, setSessionId] = useState(sessions[0]?.id ?? "");
   const [slotId, setSlotId] = useState<string | null>(null);
+  // Studio sessions are prepaid — transfer or card only, no cash.
   const [payMethod, setPayMethod] = useState<PayMethod>("CARD");
   const [customer, setCustomer] = useState<CustomerInput>({
     name: "",
@@ -47,12 +48,8 @@ export function StudioBooking({
     return (
       <OrderSuccess
         ref={placed.ref}
-        payNow={placed.method !== "CASH"}
-        note={
-          placed.method === "CASH"
-            ? "Your slot is locked — no one else can book it. Pay cash when you arrive for your session."
-            : "Your slot is locked — no one else can book it. Complete payment now to confirm your session."
-        }
+        payNow
+        note="Your slot is locked — no one else can book it. Complete payment now to confirm your session."
       />
     );
   }
@@ -157,7 +154,11 @@ export function StudioBooking({
             onChange={setCustomer}
             needAddress={false}
           />
-          <PaymentMethodPicker value={payMethod} onChange={setPayMethod} />
+          <PaymentMethodPicker
+            value={payMethod}
+            onChange={setPayMethod}
+            allowCash={false}
+          />
         </>
       ) : null}
       {error ? <p className="text-sm font-semibold">{error}</p> : null}

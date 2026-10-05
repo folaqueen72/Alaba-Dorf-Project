@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Badge } from "../../components/ui/Badge";
+import { koboToNaira } from "@/lib/format";
 
 type Slot = {
   id: string;
@@ -32,6 +33,10 @@ export function StudioManager() {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<
+    Array<{ id: string; name: string; durationMin: number; price: number; active: boolean }>
+  >([]);
+  const [sForm, setSForm] = useState({ name: "", durationMin: "", price: "" });
 
   const load = useCallback(async () => {
     const res = await fetch(
@@ -42,6 +47,9 @@ export function StudioManager() {
       setSlots(data.slots);
       setBookings(data.bookings);
     } else setMsg(data.error ?? "Could not load calendar.");
+    const sres = await fetch("/api/admin/sessions");
+    const sdata = await sres.json();
+    if (sres.ok) setSessions(sdata.sessions);
   }, [date]);
 
   useEffect(() => {
@@ -83,9 +91,92 @@ export function StudioManager() {
     load();
   }
 
+  async function saveSession(
+    id: string | null,
+    fields: { name?: string; durationMin?: string; price?: string; active?: boolean }
+  ) {
+    setMsg(null);
+    const res = await fetch("/api/admin/sessions", {
+      method: id ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...(id ? { id } : {}),
+        ...(fields.name !== undefined ? { name: fields.name } : {}),
+        ...(fields.durationMin
+          ? { durationMin: Number(fields.durationMin) }
+          : {}),
+        ...(fields.price !== undefined && fields.price !== ""
+          ? { price: Math.round(Number(fields.price) * 100) }
+          : {}),
+        ...(fields.active !== undefined ? { active: fields.active } : {}),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) setMsg(data.error ?? "Save failed.");
+    else {
+      setSForm({ name: "", durationMin: "", price: "" });
+      setMsg("Session saved — customers see the new price immediately.");
+    }
+    load();
+  }
+
   return (
     <>
-      <Card>
+      <Card title="Session types & prices">
+        <div className="space-y-2 mt-2">
+          {sessions.map((s) => (
+            <SessionRow key={s.id} session={s} onSave={saveSession} />
+          ))}
+          {sessions.length === 0 ? (
+            <p className="text-sm text-ash-600">No sessions yet.</p>
+          ) : null}
+        </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            saveSession(null, sForm);
+          }}
+          className="grid gap-2 sm:grid-cols-4 mt-3 items-end"
+        >
+          <label className="block">
+            <span className="block text-sm font-semibold mb-1">Name</span>
+            <input
+              required
+              value={sForm.name}
+              onChange={(e) => setSForm({ ...sForm, name: e.target.value })}
+              placeholder="Basic Session"
+              className="w-full border border-ash-400 rounded-[10px] px-3 py-2 text-sm outline-none focus:border-lemon-600"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-sm font-semibold mb-1">Minutes</span>
+            <input
+              required
+              type="number"
+              min={1}
+              value={sForm.durationMin}
+              onChange={(e) =>
+                setSForm({ ...sForm, durationMin: e.target.value })
+              }
+              className="w-full border border-ash-400 rounded-[10px] px-3 py-2 text-sm outline-none focus:border-lemon-600"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-sm font-semibold mb-1">Price (₦)</span>
+            <input
+              required
+              type="number"
+              min={0}
+              value={sForm.price}
+              onChange={(e) => setSForm({ ...sForm, price: e.target.value })}
+              className="w-full border border-ash-400 rounded-[10px] px-3 py-2 text-sm outline-none focus:border-lemon-600"
+            />
+          </label>
+          <Button size="sm">Add Session</Button>
+        </form>
+      </Card>
+
+      <Card title="Calendar day" className="mt-4">
         <div className="flex flex-wrap gap-2 items-end">
           <label className="block">
             <span className="block text-sm font-semibold mb-1">Day</span>
@@ -239,5 +330,62 @@ export function StudioManager() {
         </Link>
       </Card>
     </>
+  );
+}
+
+function SessionRow({
+  session: s,
+  onSave,
+}: {
+  session: {
+    id: string;
+    name: string;
+    durationMin: number;
+    price: number;
+    active: boolean;
+  };
+  onSave: (
+    id: string | null,
+    fields: { name?: string; durationMin?: string; price?: string; active?: boolean }
+  ) => void;
+}) {
+  const [price, setPrice] = useState("");
+  return (
+    <div className="border border-ash-200 rounded-[10px] p-2 flex flex-wrap items-center gap-2 text-sm">
+      <div>
+        <p className="font-bold">{s.name}</p>
+        <p className="text-ash-600">
+          {s.durationMin} min · {koboToNaira(s.price)}
+          {!s.active ? " · hidden" : ""}
+        </p>
+      </div>
+      <div className="ml-auto flex items-center gap-1">
+        <input
+          type="number"
+          min={0}
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          placeholder="New ₦ price"
+          className="w-28 border border-ash-400 rounded-lg px-2 py-1.5 text-sm outline-none focus:border-lemon-600"
+        />
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            onSave(s.id, { price });
+            setPrice("");
+          }}
+        >
+          Set Price
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onSave(s.id, { active: !s.active })}
+        >
+          {s.active ? "Hide" : "Show"}
+        </Button>
+      </div>
+    </div>
   );
 }

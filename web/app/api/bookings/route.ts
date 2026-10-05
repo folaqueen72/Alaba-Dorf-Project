@@ -34,10 +34,11 @@ export async function POST(req: Request) {
     assertCustomer(customerInput);
     if (!body.sessionTypeId || !body.slotId)
       throw new Error("Pick a session and a time slot.");
+    // Studio sessions are prepaid: transfer or card only.
+    if (body.paymentMethod === "CASH")
+      throw new Error("Studio sessions are prepaid — pay by transfer or card.");
     const paymentMethod =
-      body.paymentMethod === "CASH" ||
-      body.paymentMethod === "TRANSFER" ||
-      body.paymentMethod === "CARD"
+      body.paymentMethod === "TRANSFER" || body.paymentMethod === "CARD"
         ? body.paymentMethod
         : "CARD";
 

@@ -7,23 +7,29 @@ import {
   CustomerFields,
   type CustomerInput,
 } from "../components/CustomerFields";
+import {
+  PaymentMethodPicker,
+  type PayMethod,
+} from "../components/PaymentMethodPicker";
 import { OrderSuccess } from "../components/OrderSuccess";
+import { koboToNaira } from "@/lib/format";
 
 export function MeatOrderCard({
   animalId,
   tag,
   availableKg,
-  priceLabel,
+  pricePerKg,
   active,
 }: {
   animalId: string;
   tag: string;
   availableKg: number;
-  priceLabel: string;
+  pricePerKg: number;
   active: boolean;
 }) {
   const [kg, setKg] = useState(5);
   const [open, setOpen] = useState(false);
+  const [payMethod, setPayMethod] = useState<PayMethod>("CARD");
   const [customer, setCustomer] = useState<CustomerInput>({
     name: "",
     phone: "",
@@ -32,16 +38,23 @@ export function MeatOrderCard({
   });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [placed, setPlaced] = useState<{ ref: string; total: number } | null>(
-    null
-  );
+  const [placed, setPlaced] = useState<{
+    ref: string;
+    total: number;
+    method: PayMethod;
+  } | null>(null);
 
   if (placed) {
     return (
       <OrderSuccess
         ref={placed.ref}
         total={placed.total}
-        note={`${kg} kg reserved on ${tag} in your name. We will call you about the final weight and payment steps.`}
+        payNow={placed.method !== "CASH"}
+        note={
+          placed.method === "CASH"
+            ? `${kg} kg reserved on ${tag} in your name. Pay cash when the final weight is confirmed and your portion is ready.`
+            : `${kg} kg reserved on ${tag} in your name. Complete payment now; any final weight difference is settled with you directly.`
+        }
       />
     );
   }
@@ -59,11 +72,12 @@ export function MeatOrderCard({
           lines: [{ kind: "meat", animalId, kg }],
           customer,
           fulfillment: "PICKUP",
+          paymentMethod: payMethod,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Reservation failed.");
-      setPlaced({ ref: data.orderNo, total: data.total });
+      setPlaced({ ref: data.orderNo, total: data.total, method: payMethod });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Reservation failed.");
     } finally {
@@ -77,7 +91,10 @@ export function MeatOrderCard({
         <div>
           <p className="font-bold">{tag}</p>
           <p className="text-sm text-ash-600">
-            {availableKg} kg left · {priceLabel}
+            {availableKg} kg left ·{" "}
+            {pricePerKg > 0
+              ? `${koboToNaira(pricePerKg)}/kg`
+              : "Price to be confirmed"}
           </p>
         </div>
         {active && availableKg > 0 ? (
@@ -104,11 +121,22 @@ export function MeatOrderCard({
               className="w-full rounded-[10px] border border-ash-400 bg-white px-4 py-3 text-[15px] outline-none focus:border-lemon-600"
             />
           </label>
+          {pricePerKg > 0 && kg > 0 ? (
+            <p className="font-display text-2xl font-semibold">
+              {koboToNaira(Math.round(kg * pricePerKg))}
+            </p>
+          ) : null}
+          {pricePerKg > 0 && kg > 0 ? (
+            <p className="text-sm text-ash-600 -mt-2">
+              {kg} kg × {koboToNaira(pricePerKg)}/kg
+            </p>
+          ) : null}
           <CustomerFields
             value={customer}
             onChange={setCustomer}
             needAddress={false}
           />
+          <PaymentMethodPicker value={payMethod} onChange={setPayMethod} />
           {error ? <p className="text-sm font-semibold">{error}</p> : null}
           <Button className="w-full" disabled={busy}>
             {busy ? "Reserving…" : `Reserve ${kg} kg`}

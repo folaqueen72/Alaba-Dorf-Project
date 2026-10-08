@@ -4,6 +4,7 @@ import { SiteHeader } from "./components/SiteHeader";
 import { SiteFooter } from "./components/SiteFooter";
 import { Button } from "./components/ui/Button";
 import { EggIcon, FoodIcon, CameraIcon } from "./components/DeptIcons";
+import { InstallApp } from "./components/InstallApp";
 
 const departments = [
   {
@@ -79,6 +80,9 @@ export default function Home() {
                 </Link>{" "}
                 to skip typing your details every time.
               </p>
+              <div className="mt-2">
+                <InstallApp />
+              </div>
             </div>
             <div className="hidden sm:block">
               <Image

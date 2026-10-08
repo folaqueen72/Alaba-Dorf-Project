@@ -1,11 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { verifyWebhookSignature } from "@/lib/paystack";
-import { logActivity } from "@/lib/activity";
-import { sendEmail, paidEmail } from "@/lib/email";
-import { koboToNaira } from "@/lib/format";
+import { fulfillPayment } from "@/lib/payments";
 
-// Paystack webhook: charge.success → mark PAID, confirm order/booking,
-// move egg reservations to sold, notify the customer.
+// Paystack webhook: charge.success → fulfill (idempotent).
 export async function POST(req: Request) {
   const raw = await req.text();
   const signature = req.headers.get("x-paystack-signature");
@@ -21,73 +18,42 @@ export async function POST(req: Request) {
   if (event.event !== "charge.success" || !event.data?.reference)
     return Response.json({ ok: true });
 
-  const reference = event.data.reference;
-  await prisma.$transaction(async (tx) => {
-    const payment = await tx.payment.findUnique({
-      where: { reference },
-    });
-    if (!payment || payment.status === "PAID") return;
-    await tx.payment.update({
-      where: { id: payment.id },
-      data: { status: "PAID", rawPayload: event as never },
-    });
-
-    const order = await tx.order.findFirst({
-      where: { paymentId: payment.id },
-      include: { customer: true },
-    });
-    if (order && order.orderStatus === "PENDING_PAYMENT") {
-      await tx.order.update({
-        where: { id: order.id },
-        data: { orderStatus: "CONFIRMED", paymentStatus: "PAID" },
-      });
-      const items = (order.items as unknown as Array<{ kind: string; qty: number }>) ?? [];
-      for (const it of items) {
-        if (it.kind === "eggs") {
-          await tx.eggInventory.update({
-            where: { id: "eggs" },
-            data: {
-              reservedCrates: { decrement: Math.floor(it.qty) },
-              soldCrates: { increment: Math.floor(it.qty) },
-            },
-          });
-        }
-      }
-      await logActivity(tx, {
-        action: "payment confirmed (paystack)",
-        entity: "order",
-        entityId: order.orderNo,
-      });
-      if (order.customer.email) {
-        await sendEmail({
-          to: order.customer.email,
-          subject: `Payment confirmed — #${order.orderNo}`,
-          html: paidEmail(
-            order.customer.name,
-            order.orderNo,
-            koboToNaira(order.total)
-          ),
-        });
-      }
-      return;
-    }
-
-    const booking = await tx.booking.findFirst({
-      where: { paymentId: payment.id },
-      include: { customer: true },
-    });
-    if (booking && booking.status === "PENDING_PAYMENT") {
-      await tx.booking.update({
-        where: { id: booking.id },
-        data: { status: "CONFIRMED" },
-      });
-      await logActivity(tx, {
-        action: "payment confirmed (paystack)",
-        entity: "booking",
-        entityId: booking.id,
-      });
-    }
-  });
-
+  await fulfillPayment(event.data.reference);
   return Response.json({ ok: true });
+}
+
+export async function GET(req: Request) {
+  // Find which order/booking a Paystack reference belongs to (for the
+  // return-URL flow, without exposing details).
+  const reference = new URL(req.url).searchParams.get("reference") ?? "";
+  if (!reference) return Response.json({ found: false });
+  const payment = await prisma.payment.findUnique({
+    where: { reference },
+    include: {
+      order: {
+        select: { orderNo: true, customer: { select: { phone: true } } },
+      },
+      booking: {
+        select: { id: true, customer: { select: { phone: true } } },
+      },
+    },
+  });
+  if (!payment) return Response.json({ found: false });
+  if (payment.order)
+    return Response.json({
+      found: true,
+      type: "order",
+      orderNo: payment.order.orderNo,
+      phone: payment.order.customer.phone,
+      paid: payment.status === "PAID",
+    });
+  if (payment.booking)
+    return Response.json({
+      found: true,
+      type: "booking",
+      orderNo: payment.booking.id,
+      phone: payment.booking.customer.phone,
+      paid: payment.status === "PAID",
+    });
+  return Response.json({ found: false });
 }

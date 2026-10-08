@@ -1,12 +1,13 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SiteHeader } from "../components/SiteHeader";
 import { SiteFooter } from "../components/SiteFooter";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
+import { OrderHistory } from "../components/OrderHistory";
 import { koboToNaira } from "@/lib/format";
 
 const ORDER_STEPS = [
@@ -68,21 +69,27 @@ function TrackForm() {
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [paying, setPaying] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<Result | null>(null);
+  const trxref = params.get("trxref") ?? params.get("reference");
 
-  async function lookup(e?: React.FormEvent) {
+  async function lookup(e?: React.FormEvent, override?: { ref: string; phone: string }) {
     e?.preventDefault();
+    const ref = override?.ref ?? orderNo;
+    const ph = override?.phone ?? phone;
     setBusy(true);
     setError(null);
     setResult(null);
     try {
       const res = await fetch(
-        `/api/track?orderNo=${encodeURIComponent(orderNo)}&phone=${encodeURIComponent(phone)}`
+        `/api/track?orderNo=${encodeURIComponent(ref)}&phone=${encodeURIComponent(ph)}`
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Lookup failed.");
       setResult(data);
+      setOrderNo(ref);
+      setPhone(ph);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Lookup failed.");
     } finally {
@@ -110,12 +117,75 @@ function TrackForm() {
     }
   }
 
+  async function confirmPaid() {
+    if (!result) return;
+    setPaying(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/pay/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderNo: result.ref.replace(/^#/, "") }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.paid)
+        throw new Error(
+          data.message ?? data.error ?? "Paystack has not confirmed this payment yet."
+        );
+      await lookup(undefined, { ref: result.ref, phone });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Confirmation failed.");
+    } finally {
+      setPaying(false);
+    }
+  }
+
   const booking = result?.type === "booking";
   const steps = booking ? BOOKING_STEPS : ORDER_STEPS;
   const idx = result ? stepIndex(result.status, booking) : 0;
 
+  // Returning from Paystack: match the payment, verify it, load the order.
+  useEffect(() => {
+    if (!trxref || verifying || result) return;
+    let cancelled = false;
+    (async () => {
+      setVerifying(true);
+      setError(null);
+      try {
+        const mapRes = await fetch(
+          `/api/pay/webhook?reference=${encodeURIComponent(trxref)}`
+        );
+        const map = await mapRes.json();
+        if (!map.found)
+          throw new Error(
+            "We couldn't match that payment to an order. Enter your order number below."
+          );
+        await fetch("/api/pay/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ reference: trxref }),
+        });
+        if (!cancelled) await lookup(undefined, { ref: map.orderNo, phone: map.phone });
+      } catch (err) {
+        if (!cancelled)
+          setError(err instanceof Error ? err.message : "Confirmation failed.");
+      } finally {
+        if (!cancelled) setVerifying(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trxref]);
+
   return (
     <Card>
+      {verifying ? (
+        <p className="font-semibold mb-3">
+          Confirming your payment with Paystack — one moment…
+        </p>
+      ) : null}
       <form
         onSubmit={lookup}
         className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
@@ -188,6 +258,18 @@ function TrackForm() {
             </div>
           ) : null}
           {result.type === "order" &&
+          result.payment === "PROCESSING" ? (
+            <div className="mb-3">
+              <Button onClick={confirmPaid} disabled={paying}>
+                {paying ? "Confirming…" : "I've Paid — Confirm It"}
+              </Button>
+              <p className="text-sm text-ash-600 mt-1">
+                Paid but still showing processing? Press this to confirm
+                directly with Paystack.
+              </p>
+            </div>
+          ) : null}
+          {result.type === "order" &&
           result.payment === "UNPAID" &&
           result.method === "CASH" ? (
             <p className="text-sm text-ash-600 mb-3">
@@ -243,6 +325,9 @@ function TrackForm() {
           )}
         </div>
       ) : null}
+      <div className="mt-5 border-t border-ash-200 pt-2">
+        <OrderHistory onPick={(ref, ph) => lookup(undefined, { ref, phone: ph })} />
+      </div>
     </Card>
   );
 }

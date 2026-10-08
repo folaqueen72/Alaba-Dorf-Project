@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "./ui/Button";
+import { CopyButton } from "./OrderHistory";
 import { koboToNaira } from "@/lib/format";
 
 export function OrderSuccess({
@@ -41,7 +42,13 @@ export function OrderSuccess({
   return (
     <div className="bg-lemon-100 border border-lemon-600 rounded-xl p-6 text-center">
       <p className="font-display text-3xl font-semibold">Order received!</p>
-      <p className="mt-2 font-bold text-xl">#{ref}</p>
+      <p className="mt-2 font-bold text-xl flex items-center justify-center gap-2">
+        #{ref} <CopyButton text={ref} />
+      </p>
+      <p className="text-sm text-ash-600 mt-1">
+        Save or copy your order number — you&apos;ll need it with your phone
+        number to track this order.
+      </p>
       {typeof total === "number" ? (
         <p className="text-ash-600 mt-1">Total: {koboToNaira(total)}</p>
       ) : null}

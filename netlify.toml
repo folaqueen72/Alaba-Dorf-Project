@@ -1,8 +1,8 @@
 # Netlify deployment (the app lives in web/).
+# Note: no `publish` dir — the Next.js Runtime handles output itself.
 [build]
   base = "web"
   command = "npm run build"
-  publish = ".next"
 
 [build.environment]
-  NODE_VERSION = "24"
+  NODE_VERSION = "22"

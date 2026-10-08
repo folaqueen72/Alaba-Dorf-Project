@@ -8,6 +8,7 @@ import {
   nextOrderNo,
 } from "@/lib/orders";
 import { sendEmail, orderEmail } from "@/lib/email";
+import { rateLimit, WRITE_LIMIT } from "@/lib/rateLimit";
 import { koboToNaira } from "@/lib/format";
 
 // V1: delivery fee is flat and zero until the business configures it (Phase 4 settings).
@@ -27,6 +28,8 @@ type Body = {
 };
 
 export async function POST(req: Request) {
+  const limited = rateLimit(req, { key: "orders", ...WRITE_LIMIT });
+  if (limited) return limited;
   let body: Body;
   try {
     body = await req.json();

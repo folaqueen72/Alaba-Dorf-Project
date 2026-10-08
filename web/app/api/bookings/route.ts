@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { assertCustomer, findOrCreateCustomer } from "@/lib/orders";
+import { rateLimit, WRITE_LIMIT } from "@/lib/rateLimit";
 import { sendEmail, bookingEmail } from "@/lib/email";
 
 type Body = {
@@ -11,6 +12,8 @@ type Body = {
 };
 
 export async function POST(req: Request) {
+  const limited = rateLimit(req, { key: "bookings", ...WRITE_LIMIT });
+  if (limited) return limited;
   let body: Body;
   try {
     body = await req.json();

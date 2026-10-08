@@ -1,11 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { cleanPhone } from "@/lib/orders";
+import { rateLimit, READ_LIMIT } from "@/lib/rateLimit";
 
 // GET /api/history?phone=0803... → recent orders + bookings.
 // Signed-in customers also get everything linked to their account,
 // even if it was ordered under a different phone number.
 export async function GET(req: Request) {
+  const limited = rateLimit(req, { key: "history", ...READ_LIMIT });
+  if (limited) return limited;
   const phone = cleanPhone(
     new URL(req.url).searchParams.get("phone") ?? ""
   );

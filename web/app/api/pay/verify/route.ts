@@ -1,10 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { fulfillPayment, verifyWithPaystack } from "@/lib/payments";
+import { rateLimit, WRITE_LIMIT } from "@/lib/rateLimit";
 
 // Called when the customer returns from Paystack (or presses "I've paid").
 // Verifies directly with Paystack, then fulfills — so confirmation no longer
 // depends solely on the webhook arriving.
 export async function POST(req: Request) {
+  const limited = rateLimit(req, { key: "pay-verify", ...WRITE_LIMIT });
+  if (limited) return limited;
   const body = await req.json().catch(() => null);
   let reference = ((body?.reference ?? "") as string).trim();
   if (!reference && body?.orderNo) {

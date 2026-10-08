@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { startTransaction, paystackConfigured } from "@/lib/paystack";
+import { rateLimit, WRITE_LIMIT } from "@/lib/rateLimit";
 
 // POST /api/pay/start {ref: "ADO1042" | bookingId}
 export async function POST(req: Request) {
+  const limited = rateLimit(req, { key: "pay-start", ...WRITE_LIMIT });
+  if (limited) return limited;
   const body = await req.json().catch(() => null);
   const ref = (body?.ref ?? "").trim();
   if (!ref) return Response.json({ error: "Missing reference." }, { status: 400 });

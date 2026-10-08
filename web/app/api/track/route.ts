@@ -1,8 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { cleanPhone } from "@/lib/orders";
+import { rateLimit, READ_LIMIT } from "@/lib/rateLimit";
 
 // GET /api/track?orderNo=ADO1042&phone=0803...  → order or booking timeline
 export async function GET(req: Request) {
+  const limited = rateLimit(req, { key: "track", ...READ_LIMIT });
+  if (limited) return limited;
   const url = new URL(req.url);
   const orderNo = (url.searchParams.get("orderNo") ?? "").trim();
   const phone = cleanPhone(url.searchParams.get("phone") ?? "");

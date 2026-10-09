@@ -6,3 +6,7 @@
 
 [build.environment]
   NODE_VERSION = "22"
+  # Build-cache files are never deployed or served, but Turbopack snapshots
+  # env values into them and the secrets scanner flags the cache. Skip it;
+  # real output (functions bundle) is still scanned.
+  SECRETS_SCAN_OMIT_PATHS = ".netlify/.next/cache,.next/cache"

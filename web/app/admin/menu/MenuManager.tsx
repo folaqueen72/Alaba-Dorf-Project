@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Badge } from "../../components/ui/Badge";
+import { r2Url } from "@/lib/images";
 import { koboToNaira } from "@/lib/format";
 
 type Item = {
@@ -125,33 +126,46 @@ export function MenuManager() {
         </form>
       </Card>
       <div className="grid gap-2 mt-4">
-        {items.map((m) => (
-          <div
-            key={m.id}
-            className="bg-white border border-ash-200 rounded-[10px] p-3 flex items-center gap-3"
-          >
-            <div>
-              <p className="font-bold flex items-center gap-2">
-                {m.name}
-                {!m.available ? (
-                  <Badge status="pending">Hidden</Badge>
-                ) : null}
-              </p>
-              <p className="text-sm text-ash-600">
-                {koboToNaira(m.price)}
-                {m.description ? ` · ${m.description}` : ""}
-              </p>
-            </div>
-            <Button
-              size="sm"
-              variant="outline"
-              className="ml-auto"
-              onClick={() => toggle(m)}
+        {items.map((m) => {
+          const img = r2Url(m.imageKey);
+          return (
+            <div
+              key={m.id}
+              className="bg-white border border-ash-200 rounded-[10px] p-3 flex items-center gap-3"
             >
-              {m.available ? "Hide" : "Show"}
-            </Button>
-          </div>
-        ))}
+              {img ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={img}
+                  alt={m.name}
+                  className="w-12 h-12 rounded-lg object-cover border border-ash-200 flex-shrink-0"
+                  loading="lazy"
+                />
+              ) : null}
+              <div>
+                <p className="font-bold flex items-center gap-2">
+                  {m.name}
+                  {!m.available ? (
+                    <Badge status="pending">Hidden</Badge>
+                  ) : null}
+                </p>
+                <p className="text-sm text-ash-600">
+                  {koboToNaira(m.price)}
+                  {m.description ? ` · ${m.description}` : ""}
+                  {!img ? " · no photo yet" : ""}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                className="ml-auto"
+                onClick={() => toggle(m)}
+              >
+                {m.available ? "Hide" : "Show"}
+              </Button>
+            </div>
+          );
+        })}
       </div>
       {msg ? <p className="text-sm font-semibold mt-2">{msg}</p> : null}
     </>

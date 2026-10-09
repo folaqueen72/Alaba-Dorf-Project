@@ -12,6 +12,7 @@ import {
   type PayMethod,
 } from "../components/PaymentMethodPicker";
 import { OrderSuccess } from "../components/OrderSuccess";
+import { r2Url } from "@/lib/images";
 import { koboToNaira } from "@/lib/format";
 
 export type MenuLine = {
@@ -20,6 +21,7 @@ export type MenuLine = {
   desc: string;
   price: number;
   soldOut: boolean;
+  imageKey: string | null;
 };
 
 export function EateryOrder({ menu }: { menu: MenuLine[] }) {
@@ -102,11 +104,26 @@ export function EateryOrder({ menu }: { menu: MenuLine[] }) {
           The kitchen is on break — the menu will appear here when food is ready.
         </p>
       ) : null}
-      {menu.map((m) => (
-        <div
-          key={m.id}
-          className="flex items-center gap-3 border border-ash-200 rounded-[10px] p-3 mb-2"
-        >
+      {menu.map((m) => {
+        const img = r2Url(m.imageKey);
+        return (
+          <div
+            key={m.id}
+            className="flex items-center gap-3 border border-ash-200 rounded-[10px] p-3 mb-2"
+          >
+            {img ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={img}
+                alt={m.name}
+                className="w-14 h-14 rounded-lg object-cover flex-shrink-0 border border-ash-200"
+                loading="lazy"
+              />
+            ) : (
+              <span className="w-14 h-14 rounded-lg bg-lemon-100 text-lemon-800 font-display text-2xl font-semibold flex items-center justify-center flex-shrink-0">
+                {m.name.charAt(0)}
+              </span>
+            )}
           <div>
             <p className="font-bold flex items-center gap-2">
               {m.name}
@@ -147,7 +164,8 @@ export function EateryOrder({ menu }: { menu: MenuLine[] }) {
             </div>
           )}
         </div>
-      ))}
+        );
+      })}
 
       {count > 0 ? (
         <div className="mt-4 border-t border-ash-200 pt-4 space-y-4">

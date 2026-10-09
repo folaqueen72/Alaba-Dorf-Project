@@ -16,6 +16,7 @@ export default async function EateryPage() {
       desc: m.description ?? "",
       price: m.price,
       soldOut: false,
+      imageKey: m.imageKey,
     }))
     .concat(
       items
@@ -26,6 +27,7 @@ export default async function EateryPage() {
           desc: m.description ?? "",
           price: m.price,
           soldOut: true,
+          imageKey: m.imageKey,
         }))
     );
 

@@ -4,6 +4,7 @@ import { SiteFooter } from "../components/SiteFooter";
 import { Card } from "../components/ui/Card";
 import { StudioBooking, type SessionLine, type SlotLine } from "./StudioBooking";
 import { ContactLinks } from "../components/ContactLinks";
+import { r2Url } from "@/lib/images";
 import { prisma } from "@/lib/prisma";
 import { koboToNaira } from "@/lib/format";
 
@@ -58,7 +59,7 @@ export default async function StudioPage({
   const prevKey = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, "0")}`;
   const nextKey = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}`;
 
-  const [sessions, slots] = await Promise.all([
+  const [sessions, slots, gallery] = await Promise.all([
     prisma.sessionType.findMany({
       where: { active: true },
       orderBy: { durationMin: "asc" },
@@ -70,6 +71,11 @@ export default async function StudioPage({
       },
       orderBy: [{ date: "asc" }, { startTime: "asc" }],
       take: 400,
+    }),
+    prisma.galleryImage.findMany({
+      where: { active: true },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+      take: 12,
     }),
   ]);
 
@@ -205,6 +211,35 @@ export default async function StudioPage({
             </p>
           </Card>
         )}
+
+        {gallery.length > 0 ? (
+          <Card title="Previous works" className="mt-4">
+            <p className="text-sm text-ash-600 mt-1 mb-3">
+              A sample of recent sessions from our studio.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {gallery.map((g) => {
+                const src = r2Url(g.imageKey);
+                return src ? (
+                  <figure key={g.id}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={src}
+                      alt={g.caption ?? "Studio work"}
+                      className="w-full aspect-square rounded-[10px] object-cover border border-ash-200"
+                      loading="lazy"
+                    />
+                    {g.caption ? (
+                      <figcaption className="text-xs text-ash-600 mt-1">
+                        {g.caption}
+                      </figcaption>
+                    ) : null}
+                  </figure>
+                ) : null;
+              })}
+            </div>
+          </Card>
+        ) : null}
 
         <Card title="Visit or call us" className="mt-4">
           <p className="text-[15px] mt-1">

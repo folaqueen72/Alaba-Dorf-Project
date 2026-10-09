@@ -344,6 +344,19 @@ model Payment {
   @@map("payment")
 }
 
+// ---------- Studio gallery (previous works) ----------
+
+model GalleryImage {
+  id        String   @id @default(cuid())
+  imageKey  String // R2 object key
+  caption   String?
+  active    Boolean  @default(true)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@map("gallery_image")
+}
+
 // ---------- Push subscriptions (order updates) ----------
 
 model PushSubscription {

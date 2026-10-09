@@ -1,5 +1,6 @@
 import { requireAdmin } from "@/lib/requireAdmin";
 import { StudioManager } from "./StudioManager";
+import { GalleryManager } from "./GalleryManager";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export default async function AdminStudioPage() {
         completion.
       </p>
       <StudioManager />
+      <GalleryManager />
     </>
   );
 }

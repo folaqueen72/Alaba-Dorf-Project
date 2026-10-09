@@ -42,6 +42,22 @@ export default async function EateryPage() {
           Only what is in the kitchen is listed here. Add to cart, enter your
           details, done.
         </p>
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          {[
+            ["/gallery/grilled-turkey.jpg", "Seasoned grilled turkey"],
+            ["/gallery/plate-2.jpg", "Rice and chicken, served hot"],
+            ["/gallery/burgers.jpg", "Loaded burgers with drinks"],
+          ].map(([src, alt]) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              key={src}
+              src={src}
+              alt={alt}
+              className="w-full aspect-square rounded-[10px] object-cover border border-ash-200"
+              loading="lazy"
+            />
+          ))}
+        </div>
         <Card>
           <EateryOrder menu={menu} />
         </Card>

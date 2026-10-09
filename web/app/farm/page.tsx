@@ -37,6 +37,7 @@ export default async function FarmPage() {
       livePrice: a.livePrice,
       liveStock: a.liveStock,
       active: a.status === "AVAILABLE",
+      imageKey: a.imageKey,
     }));
 
   return (
@@ -83,6 +84,23 @@ export default async function FarmPage() {
             Choose your bird, then live birds or per-kilo portions.
           </p>
           <PoultryOrder batches={poultry} />
+          <div className="grid grid-cols-3 gap-2 mt-4">
+            {[
+              ["/gallery/dressed-1.jpg", "Dressed birds, weighed per kilo"],
+              ["/gallery/dressed-2.jpg", "Cleaned and ready to cook"],
+              ["/gallery/dressed-3.jpg", "Fresh from our pens"],
+            ].map(([src, alt]) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={src}
+                src={src}
+                alt={alt}
+                title={alt}
+                className="w-full aspect-square rounded-[10px] object-cover border border-ash-200"
+                loading="lazy"
+              />
+            ))}
+          </div>
         </Card>
       </main>
       <SiteFooter />

@@ -45,6 +45,7 @@ export default async function Home() {
       desc: "Crates of fresh eggs, kilos of cow or pig, and live or dressed turkey and broiler — reserved in your name.",
       items: ["Eggs by the crate", "Cow & pig portions", "Turkey & broiler"],
       cta: "Explore Products",
+      img: "/gallery/eggs-crates.jpg",
       art: <FarmArt className="w-full h-auto block" />,
       price: prices.egg ? `Eggs ${prices.egg}/crate` : null,
     },
@@ -55,6 +56,7 @@ export default async function Home() {
       desc: "Jollof rice, fried rice, chicken and more. Pay your way, then collect your meal or have it delivered.",
       items: ["Jollof rice", "Fried rice", "Grilled chicken"],
       cta: "View Menu",
+      img: "/gallery/jollof-plate.jpg",
       art: <EateryArt className="w-full h-auto block" />,
       price: null,
     },
@@ -65,6 +67,7 @@ export default async function Home() {
       desc: "Family portraits, business photos and event coverage. Pick a session and a free slot — never double-booked.",
       items: ["Basic & premium sessions", "Live availability calendar", "Instant confirmation"],
       cta: "Book a Session",
+      img: "/gallery/portrait-1.jpg",
       art: <StudioArt className="w-full h-auto block" />,
       price: prices.studio ? `Sessions ${prices.studio}` : null,
     },
@@ -142,7 +145,17 @@ export default async function Home() {
                 key={d.href}
                 className="bg-white border border-ash-200 rounded-2xl overflow-hidden flex flex-col transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(20,22,16,0.10)] hover:border-lemon-600"
               >
-                {d.art}
+                {d.img ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={d.img}
+                    alt={d.name}
+                    className="w-full aspect-[16/10] object-cover block"
+                    loading="lazy"
+                  />
+                ) : (
+                  d.art
+                )}
                 <div className="p-5 flex flex-col flex-1">
                   <p className="text-xs font-bold tracking-[0.14em] uppercase text-lemon-800">
                     {d.tag}

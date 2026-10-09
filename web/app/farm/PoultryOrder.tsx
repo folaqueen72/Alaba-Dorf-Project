@@ -23,6 +23,7 @@ export type PoultryLine = {
   livePrice: number | null;
   liveStock: number | null;
   active: boolean;
+  imageKey: string | null;
 };
 
 export function PoultryOrder({ batches }: { batches: PoultryLine[] }) {
@@ -118,18 +119,29 @@ export function PoultryOrder({ batches }: { batches: PoultryLine[] }) {
               setBatchId(b.id);
               setQty(1);
             }}
-            className={`text-left border rounded-[10px] p-3 ${
+            className={`text-left border rounded-[10px] p-3 flex items-center gap-3 ${
               batchId === b.id
                 ? "bg-lemon-50 border-lemon-600"
                 : "bg-white border-ash-400"
             }`}
           >
-            <p className="font-bold">{b.bird}</p>
-            <p className="text-sm text-ash-600">
-              {b.liveStock != null ? `${b.liveStock} live` : ""}{" "}
-              {b.liveStock != null && b.availableKg > 0 ? "·" : ""}{" "}
-              {b.availableKg > 0 ? `${b.availableKg} kg` : ""}
-            </p>
+            {b.imageKey ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={b.imageKey}
+                alt={b.bird}
+                className="w-14 h-14 rounded-lg object-cover border border-ash-200 flex-shrink-0"
+                loading="lazy"
+              />
+            ) : null}
+            <span>
+              <p className="font-bold">{b.bird}</p>
+              <p className="text-sm text-ash-600">
+                {b.liveStock != null ? `${b.liveStock} live` : ""}{" "}
+                {b.liveStock != null && b.availableKg > 0 ? "·" : ""}{" "}
+                {b.availableKg > 0 ? `${b.availableKg} kg` : ""}
+              </p>
+            </span>
           </button>
         ))}
       </div>

@@ -93,6 +93,13 @@ export function EggOrderCard({
           <Badge status="confirmed">In stock</Badge>
         )}
       </div>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/gallery/eggs-crates.jpg"
+        alt="Crates of fresh table eggs"
+        className="w-full aspect-[16/9] rounded-[10px] object-cover border border-ash-200 mt-3"
+        loading="lazy"
+      />
       <p className="text-ash-600 text-sm mt-1">
         {available} crates available · {koboToNaira(pricePerCrate)} per crate
       </p>

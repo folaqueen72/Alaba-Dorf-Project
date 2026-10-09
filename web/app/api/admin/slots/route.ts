@@ -4,7 +4,7 @@ import { logActivity } from "@/lib/activity";
 import { notifyCustomer } from "@/lib/notify";
 import { BOOKING_NEXT } from "@/lib/workflow";
 
-const HOURS = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00"];
+const HOURS = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"];
 const ENDS: Record<string, string> = {
   "10:00": "11:00",
   "11:00": "12:00",
@@ -12,6 +12,8 @@ const ENDS: Record<string, string> = {
   "13:00": "14:00",
   "14:00": "15:00",
   "15:00": "16:00",
+  "16:00": "17:00",
+  "17:00": "18:00",
 };
 
 // GET /api/admin/slots?from=YYYY-MM-DD&to=YYYY-MM-DD → slots + bookings

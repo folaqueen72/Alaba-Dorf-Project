@@ -74,6 +74,31 @@ export function GalleryManager() {
     load();
   }
 
+  async function replacePhoto(p: Photo, file: File) {
+    setMsg(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const up = await fetch("/api/admin/upload?folder=sessions", {
+        method: "POST",
+        body: form,
+      });
+      const upData = await up.json();
+      if (!up.ok) throw new Error(upData.error ?? "Upload failed.");
+      const res = await fetch("/api/admin/gallery", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: p.id, imageKey: upData.key }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Replace failed.");
+      setMsg("Photo replaced.");
+      load();
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Replace failed.");
+    }
+  }
+
   async function remove(id: string) {
     if (!window.confirm("Remove this photo from the gallery?")) return;
     await fetch(`/api/admin/gallery?id=${encodeURIComponent(id)}`, {
@@ -138,6 +163,21 @@ export function GalleryManager() {
               <p className="text-xs font-semibold mt-1 truncate">
                 {p.caption || "No caption"}
               </p>
+              <label className="block mt-1">
+                <span className="text-xs font-bold underline underline-offset-2 cursor-pointer">
+                  Replace
+                </span>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) replacePhoto(p, f);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
               <div className="flex gap-1 mt-1">
                 <button
                   onClick={() => toggle(p)}

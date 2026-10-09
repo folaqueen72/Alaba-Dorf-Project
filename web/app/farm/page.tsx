@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 const BIRD_NAMES: Record<string, string> = {
   TURKEY: "Turkey",
-  BROILER: "Broiler",
+  BROILER: "Chicken",
 };
 
 export default async function FarmPage() {
@@ -79,28 +79,11 @@ export default async function FarmPage() {
           </Card>
         </div>
 
-        <Card title="Poultry — Turkey & Broiler" className="mt-4">
+        <Card title="Poultry — Turkey & Chicken" className="mt-4">
           <p className="text-sm text-ash-600 mt-1 mb-3">
             Choose your bird, then live birds or per-kilo portions.
           </p>
           <PoultryOrder batches={poultry} />
-          <div className="grid grid-cols-3 gap-2 mt-4">
-            {[
-              ["/gallery/dressed-1.jpg", "Dressed birds, weighed per kilo"],
-              ["/gallery/dressed-2.jpg", "Cleaned and ready to cook"],
-              ["/gallery/dressed-3.jpg", "Fresh from our pens"],
-            ].map(([src, alt]) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={src}
-                src={src}
-                alt={alt}
-                title={alt}
-                className="w-full aspect-square rounded-[10px] object-cover border border-ash-200"
-                loading="lazy"
-              />
-            ))}
-          </div>
         </Card>
       </main>
       <SiteFooter />

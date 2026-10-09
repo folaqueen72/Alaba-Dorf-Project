@@ -45,7 +45,7 @@ export async function PATCH(req: Request) {
   if ("error" in gate) return gate.error;
   const body = await req.json().catch(() => null);
   try {
-    const { id, caption, active, sortOrder } = body ?? {};
+    const { id, caption, active, sortOrder, imageKey } = body ?? {};
     if (!id) throw new Error("Missing photo.");
     const image = await prisma.galleryImage.update({
       where: { id },
@@ -53,6 +53,7 @@ export async function PATCH(req: Request) {
         ...(caption !== undefined ? { caption: caption.trim() || null } : {}),
         ...(active !== undefined ? { active: !!active } : {}),
         ...(sortOrder !== undefined ? { sortOrder: Number(sortOrder) } : {}),
+        ...(imageKey ? { imageKey } : {}),
       },
     });
     return Response.json({ image });

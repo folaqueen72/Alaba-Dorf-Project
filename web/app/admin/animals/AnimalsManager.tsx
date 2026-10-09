@@ -112,7 +112,7 @@ export function AnimalsManager() {
               <option value="COW">Cow</option>
               <option value="PIG">Pig</option>
               <option value="TURKEY">Turkey</option>
-              <option value="BROILER">Broiler</option>
+              <option value="BROILER">Chicken</option>
             </select>
           </label>
           <label className="block">

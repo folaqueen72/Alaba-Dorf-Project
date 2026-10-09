@@ -93,6 +93,8 @@ async function main() {
       ["13:00", "14:00"],
       ["14:00", "15:00"],
       ["15:00", "16:00"],
+      ["16:00", "17:00"],
+      ["17:00", "18:00"],
     ]) {
       await prisma.studioSlot.upsert({
         where: { date_startTime: { date: day, startTime: start } },
@@ -106,6 +108,7 @@ async function main() {
     { name: "Jollof Rice", price: 300000, description: "Party style" },
     { name: "Fried Rice", price: 350000, description: "With mixed veg" },
     { name: "Grilled Chicken", price: 250000, description: "Full portion" },
+    { name: "Chicken Kebab", price: 350000, description: "With drinks available" },
   ]) {
     await prisma.menuItem.upsert({
       where: { id: `seed-${item.name.toLowerCase().replace(/[^a-z]+/g, "-")}` },
@@ -136,18 +139,18 @@ async function main() {
     },
   });
   await prisma.animal.upsert({
-    where: { tag: "Broiler Batch A" },
+    where: { tag: "Chicken Batch A" },
     update: {},
     create: {
       type: "BROILER",
-      tag: "Broiler Batch A",
+      tag: "Chicken Batch A",
       totalKg: "200.00",
       availableKg: "200.00",
       pricePerKg: 550000,
       livePrice: 1800000,
       liveStock: 100,
       status: "AVAILABLE",
-      description: "Live broilers or per-kilo portions.",
+      description: "Live chickens or per-kilo portions.",
     },
   });
 }

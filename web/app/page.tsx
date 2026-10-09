@@ -2,7 +2,7 @@ import Link from "next/link";
 import { SiteHeader } from "./components/SiteHeader";
 import { SiteFooter } from "./components/SiteFooter";
 import { Button } from "./components/ui/Button";
-import { FarmArt, EateryArt, StudioArt, HeroCollage } from "./components/HomeArt";
+import { FarmArt, EateryArt, StudioArt } from "./components/HomeArt";
 import { prisma } from "@/lib/prisma";
 import { koboToNaira } from "@/lib/format";
 
@@ -67,7 +67,7 @@ export default async function Home() {
       desc: "Family portraits, business photos and event coverage. Pick a session and a free slot — never double-booked.",
       items: ["Basic & premium sessions", "Live availability calendar", "Instant confirmation"],
       cta: "Book a Session",
-      img: "/gallery/portrait-1.jpg",
+      img: "/gallery/studio-room.jpg",
       art: <StudioArt className="w-full h-auto block" />,
       price: prices.studio ? `Sessions ${prices.studio}` : null,
     },
@@ -79,8 +79,8 @@ export default async function Home() {
       <main className="w-full">
         {/* Hero */}
         <section className="bg-lemon-600 text-white overflow-hidden">
-          <div className="max-w-5xl mx-auto px-4 py-10 sm:py-16 grid gap-8 md:grid-cols-[1.1fr_0.9fr] items-center">
-            <div>
+          <div className="max-w-5xl mx-auto px-4 py-10 sm:py-14">
+            <div className="max-w-2xl">
               <p className="inline-block text-xs font-bold tracking-[0.16em] uppercase bg-ink/25 rounded-full px-3 py-1.5">
                 Alaba Dorf Outlet · Farm, Food &amp; Photos
               </p>
@@ -121,9 +121,6 @@ export default async function Home() {
                   )
                 )}
               </ul>
-            </div>
-            <div className="mx-auto w-full max-w-[340px]">
-              <HeroCollage className="w-full h-auto block drop-shadow-[0_16px_32px_rgba(20,22,16,0.25)]" />
             </div>
           </div>
         </section>

@@ -24,9 +24,11 @@ export async function POST(req: Request) {
   const gate = await adminGuard(req, ["FARM"]);
   if ("error" in gate) return gate.error;
   const body = await req.json().catch(() => null);
-  const { type, tag, totalKg, pricePerKg, description, imageKey } = body ?? {};
+  const { type, tag, totalKg, pricePerKg, description, imageKey, livePrice, liveStock } =
+    body ?? {};
   try {
-    if (type !== "COW" && type !== "PIG") throw new Error("Pick cow or pig.");
+    if (type !== "COW" && type !== "PIG" && type !== "TURKEY" && type !== "BROILER")
+      throw new Error("Pick cow, pig, turkey or broiler.");
     if (!tag?.trim()) throw new Error("Tag is required (e.g. Cow #025).");
     if (!(Number(totalKg) > 0)) throw new Error("Total weight is required.");
     const animal = await prisma.animal.create({
@@ -36,6 +38,14 @@ export async function POST(req: Request) {
         totalKg: Number(totalKg),
         availableKg: Number(totalKg),
         pricePerKg: Math.round(Number(pricePerKg) || 0),
+        livePrice:
+          livePrice === undefined || livePrice === ""
+            ? undefined
+            : Math.round(Number(livePrice)),
+        liveStock:
+          liveStock === undefined || liveStock === ""
+            ? undefined
+            : Math.round(Number(liveStock)),
         description,
         imageKey,
       },
@@ -60,7 +70,8 @@ export async function PATCH(req: Request) {
   const gate = await adminGuard(req, ["FARM"]);
   if ("error" in gate) return gate.error;
   const body = await req.json().catch(() => null);
-  const { id, pricePerKg, status, finalKg, description, imageKey } = body ?? {};
+  const { id, pricePerKg, status, finalKg, description, imageKey, livePrice, liveStock } =
+    body ?? {};
   try {
     const before = await prisma.animal.findUnique({ where: { id } });
     if (!before) throw new Error("Animal not found.");
@@ -83,6 +94,12 @@ export async function PATCH(req: Request) {
         availableKg,
         ...(pricePerKg !== undefined
           ? { pricePerKg: Math.round(Number(pricePerKg)) }
+          : {}),
+        ...(livePrice !== undefined && livePrice !== ""
+          ? { livePrice: Math.round(Number(livePrice)) }
+          : {}),
+        ...(liveStock !== undefined && liveStock !== ""
+          ? { liveStock: Math.round(Number(liveStock)) }
           : {}),
         ...(status ? { status } : {}),
         ...(description !== undefined ? { description } : {}),

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { ContactLinks } from "./ContactLinks";
 
 export function SiteFooter() {
   return (
@@ -45,16 +46,20 @@ export function SiteFooter() {
           </ul>
         </div>
         <div>
-          <p className="font-bold mb-2">Visit Us</p>
-          <p className="text-ash-200">
+          <p className="font-bold mb-2">Visit or Call Us</p>
+          <p className="text-ash-200 mb-2">
             Behind Bodmas School, Ojoyeye, Olodo, Ibadan.
           </p>
-          <a href="tel:09011544504" className="font-bold">
-            0901 154 4504
-          </a>
-          <p className="text-ash-200 mt-1">
+          <ContactLinks dark />
+          <p className="text-ash-200 mt-2">
             Come pick up daily, or choose delivery for farm and food orders.
           </p>
+          <Link
+            href="/admin/login"
+            className="inline-block mt-2 text-ash-400 hover:text-white text-xs"
+          >
+            Staff sign in
+          </Link>
           <Link
             href="/track"
             className="inline-block mt-2 underline underline-offset-4"

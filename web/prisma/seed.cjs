@@ -118,6 +118,38 @@ async function main() {
   }
 
   console.log("Seed OK:", { cow: cow.tag });
+
+  // Poultry batches (placeholder prices/stock — change in Admin anytime).
+  await prisma.animal.upsert({
+    where: { tag: "Turkey Batch A" },
+    update: {},
+    create: {
+      type: "TURKEY",
+      tag: "Turkey Batch A",
+      totalKg: "120.00",
+      availableKg: "120.00",
+      pricePerKg: 900000,
+      livePrice: 4500000,
+      liveStock: 40,
+      status: "AVAILABLE",
+      description: "Live turkeys or per-kilo portions.",
+    },
+  });
+  await prisma.animal.upsert({
+    where: { tag: "Broiler Batch A" },
+    update: {},
+    create: {
+      type: "BROILER",
+      tag: "Broiler Batch A",
+      totalKg: "200.00",
+      availableKg: "200.00",
+      pricePerKg: 550000,
+      livePrice: 1800000,
+      liveStock: 100,
+      status: "AVAILABLE",
+      description: "Live broilers or per-kilo portions.",
+    },
+  });
 }
 
 main()

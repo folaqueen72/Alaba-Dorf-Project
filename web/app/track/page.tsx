@@ -8,6 +8,7 @@ import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 import { OrderHistory } from "../components/OrderHistory";
+import { NotifyToggle } from "../components/Push";
 import { koboToNaira } from "@/lib/format";
 
 const ORDER_STEPS = [
@@ -327,6 +328,7 @@ function TrackForm() {
       ) : null}
       <div className="mt-5 border-t border-ash-200 pt-2">
         <OrderHistory onPick={(ref, ph) => lookup(undefined, { ref, phone: ph })} />
+        <NotifyToggle phone={phone} />
       </div>
     </Card>
   );

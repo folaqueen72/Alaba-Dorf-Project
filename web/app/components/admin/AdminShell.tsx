@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { AdminNavLink } from "../NavLink";
 
 const nav = [
   { href: "/admin", label: "Dashboard" },
@@ -23,15 +24,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
             Alaba Dorf · Admin
           </Link>
         </div>
-        <nav className="flex sm:flex-col gap-1 px-3 pb-4 overflow-x-auto text-sm font-semibold">
+        <nav className="flex sm:flex-col gap-1 px-3 pb-4 overflow-x-auto">
           {nav.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="px-3 py-2 rounded-lg hover:bg-ash-800 whitespace-nowrap"
-            >
+            <AdminNavLink key={item.label} href={item.href}>
               {item.label}
-            </Link>
+            </AdminNavLink>
           ))}
         </nav>
       </aside>

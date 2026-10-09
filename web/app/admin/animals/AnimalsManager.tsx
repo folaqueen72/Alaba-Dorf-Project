@@ -13,6 +13,8 @@ type Animal = {
   totalKg: number;
   availableKg: number;
   pricePerKg: number;
+  livePrice: number | null;
+  liveStock: number | null;
   status: string;
   _count: { reservations: number };
 };
@@ -25,6 +27,8 @@ export function AnimalsManager() {
     tag: "",
     totalKg: "",
     pricePerKg: "",
+    livePrice: "",
+    liveStock: "",
   });
 
   async function load() {
@@ -49,6 +53,8 @@ export function AnimalsManager() {
         tag: form.tag,
         totalKg: Number(form.totalKg),
         pricePerKg: Math.round(Number(form.pricePerKg) * 100),
+        ...(form.livePrice ? { livePrice: Math.round(Number(form.livePrice) * 100) } : {}),
+        ...(form.liveStock ? { liveStock: Number(form.liveStock) } : {}),
       }),
     });
     const data = await res.json();
@@ -56,12 +62,18 @@ export function AnimalsManager() {
       setMsg(data.error ?? "Create failed.");
       return;
     }
-    setForm({ type: "COW", tag: "", totalKg: "", pricePerKg: "" });
+    setForm({ type: "COW", tag: "", totalKg: "", pricePerKg: "", livePrice: "", liveStock: "" });
     setMsg(`${data.animal.tag} listed.`);
     load();
   }
 
-  async function adjust(id: string, finalKg: string, price: string) {
+  async function adjust(
+    id: string,
+    finalKg: string,
+    price: string,
+    livePrice: string,
+    liveStock: string
+  ) {
     setMsg(null);
     const res = await fetch("/api/admin/animals", {
       method: "PATCH",
@@ -70,6 +82,8 @@ export function AnimalsManager() {
         id,
         ...(finalKg ? { finalKg: Number(finalKg) } : {}),
         ...(price ? { pricePerKg: Math.round(Number(price) * 100) } : {}),
+        ...(livePrice ? { livePrice: Math.round(Number(livePrice) * 100) } : {}),
+        ...(liveStock ? { liveStock: Number(liveStock) } : {}),
       }),
     });
     const data = await res.json();
@@ -86,7 +100,7 @@ export function AnimalsManager() {
       <Card title="List a new animal">
         <form
           onSubmit={create}
-          className="grid gap-3 sm:grid-cols-5 mt-2 items-end"
+          className="grid gap-3 sm:grid-cols-3 mt-2 items-end"
         >
           <label className="block">
             <span className="block text-sm font-semibold mb-1">Type</span>
@@ -97,6 +111,8 @@ export function AnimalsManager() {
             >
               <option value="COW">Cow</option>
               <option value="PIG">Pig</option>
+              <option value="TURKEY">Turkey</option>
+              <option value="BROILER">Broiler</option>
             </select>
           </label>
           <label className="block">
@@ -133,6 +149,30 @@ export function AnimalsManager() {
               className="w-full border border-ash-400 rounded-[10px] px-3 py-3 outline-none focus:border-lemon-600"
             />
           </label>
+          <label className="block">
+            <span className="block text-sm font-semibold mb-1">
+              ₦ per live bird (poultry)
+            </span>
+            <input
+              type="number"
+              min={0}
+              value={form.livePrice}
+              onChange={(e) => setForm({ ...form, livePrice: e.target.value })}
+              className="w-full border border-ash-400 rounded-[10px] px-3 py-3 outline-none focus:border-lemon-600"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-sm font-semibold mb-1">
+              Live birds in stock
+            </span>
+            <input
+              type="number"
+              min={0}
+              value={form.liveStock}
+              onChange={(e) => setForm({ ...form, liveStock: e.target.value })}
+              className="w-full border border-ash-400 rounded-[10px] px-3 py-3 outline-none focus:border-lemon-600"
+            />
+          </label>
           <Button>List Animal</Button>
         </form>
       </Card>
@@ -152,10 +192,19 @@ function AnimalRow({
   onAdjust,
 }: {
   animal: Animal;
-  onAdjust: (id: string, finalKg: string, price: string) => void;
+  onAdjust: (
+    id: string,
+    finalKg: string,
+    price: string,
+    livePrice: string,
+    liveStock: string
+  ) => void;
 }) {
   const [finalKg, setFinalKg] = useState("");
   const [price, setPrice] = useState("");
+  const [livePrice, setLivePrice] = useState("");
+  const [liveStock, setLiveStock] = useState("");
+  const isPoultry = a.type === "TURKEY" || a.type === "BROILER";
   return (
     <Card>
       <div className="flex flex-wrap items-center gap-2">
@@ -167,9 +216,11 @@ function AnimalRow({
           {a.availableKg} / {a.totalKg} kg ·{" "}
           {a.pricePerKg > 0 ? `${koboToNaira(a.pricePerKg)}/kg` : "price TBC"} ·{" "}
           {a._count.reservations} reservation(s)
+          {isPoultry && a.liveStock != null ? ` · ${a.liveStock} live` : ""}
+          {isPoultry && a.livePrice ? ` · ${koboToNaira(a.livePrice)}/bird` : ""}
         </span>
       </div>
-      <div className="grid gap-2 sm:grid-cols-3 mt-3 items-end">
+      <div className="grid gap-2 sm:grid-cols-4 mt-3 items-end">
         <label className="block">
           <span className="block text-sm font-semibold mb-1">
             Final weight (kg)
@@ -195,13 +246,43 @@ function AnimalRow({
             className="w-full border border-ash-400 rounded-[10px] px-3 py-2 text-sm outline-none focus:border-lemon-600"
           />
         </label>
+        {isPoultry ? (
+          <>
+            <label className="block">
+              <span className="block text-sm font-semibold mb-1">
+                ₦ per live bird
+              </span>
+              <input
+                type="number"
+                min={0}
+                value={livePrice}
+                onChange={(e) => setLivePrice(e.target.value)}
+                className="w-full border border-ash-400 rounded-[10px] px-3 py-2 text-sm outline-none focus:border-lemon-600"
+              />
+            </label>
+            <label className="block">
+              <span className="block text-sm font-semibold mb-1">
+                Live birds in stock
+              </span>
+              <input
+                type="number"
+                min={0}
+                value={liveStock}
+                onChange={(e) => setLiveStock(e.target.value)}
+                className="w-full border border-ash-400 rounded-[10px] px-3 py-2 text-sm outline-none focus:border-lemon-600"
+              />
+            </label>
+          </>
+        ) : null}
         <Button
           size="sm"
           variant="outline"
           onClick={() => {
-            onAdjust(a.id, finalKg, price);
+            onAdjust(a.id, finalKg, price, livePrice, liveStock);
             setFinalKg("");
             setPrice("");
+            setLivePrice("");
+            setLiveStock("");
           }}
         >
           Apply

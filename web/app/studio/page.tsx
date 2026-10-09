@@ -3,6 +3,7 @@ import { SiteHeader } from "../components/SiteHeader";
 import { SiteFooter } from "../components/SiteFooter";
 import { Card } from "../components/ui/Card";
 import { StudioBooking, type SessionLine, type SlotLine } from "./StudioBooking";
+import { ContactLinks } from "../components/ContactLinks";
 import { prisma } from "@/lib/prisma";
 import { koboToNaira } from "@/lib/format";
 
@@ -209,13 +210,10 @@ export default async function StudioPage({
           <p className="text-[15px] mt-1">
             Behind Bodmas School, Ojoyeye, Olodo, Ibadan.
           </p>
-          <a
-            href="tel:09011544504"
-            className="inline-block mt-2 font-display text-2xl font-semibold text-lemon-800"
-          >
-            0901 154 4504
-          </a>
-          <p className="text-sm text-ash-600 mt-1">
+          <div className="mt-2">
+            <ContactLinks />
+          </div>
+          <p className="text-sm text-ash-600 mt-2">
             Call for directions, bulk orders or anything the website cannot do
             yet.
           </p>

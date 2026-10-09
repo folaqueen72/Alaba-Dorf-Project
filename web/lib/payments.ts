@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { logActivity } from "./activity";
+import { notifyCustomer } from "./notify";
 import { sendEmail, paidEmail } from "./email";
 import { koboToNaira } from "./format";
 
@@ -58,6 +59,11 @@ export async function fulfillPayment(
         entity: "order",
         entityId: order.orderNo,
       });
+      await notifyCustomer(order.customerId, {
+        title: `Payment confirmed — #${order.orderNo}`,
+        body: "Payment received. Your order is confirmed and being prepared.",
+        url: `/track?orderNo=${order.orderNo}`,
+      });
       if (order.customer.email) {
         await sendEmail({
           to: order.customer.email,
@@ -87,6 +93,11 @@ export async function fulfillPayment(
         action: "payment confirmed (paystack)",
         entity: "booking",
         entityId: booking.id,
+      });
+      await notifyCustomer(booking.customerId, {
+        title: "Studio booking confirmed",
+        body: `Payment received for ${booking.id.slice(0, 8).toUpperCase()}. See you at your session.`,
+        url: `/track`,
       });
       return { fulfilled: true, kind: "booking" as const };
     }

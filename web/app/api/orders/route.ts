@@ -17,6 +17,7 @@ const DELIVERY_FEE_KOBO = 0;
 type Line =
   | { kind: "eggs"; crates: number }
   | { kind: "meat"; animalId: string; kg: number }
+  | { kind: "poultry"; animalId: string; mode: "live" | "kg"; qty?: number; kg?: number }
   | { kind: "food"; menuItemId: string; qty: number };
 
 type Body = {
@@ -150,6 +151,80 @@ export async function POST(req: Request) {
             unitPrice: animal.pricePerKg,
             reservationId: reservation.id,
           });
+        } else if (line.kind === "poultry") {
+          const mode = line.mode === "live" ? "live" : "kg";
+          const locked = await tx.$queryRaw<
+            Array<{
+              id: string;
+              tag: string;
+              type: string;
+              availableKg: string;
+              pricePerKg: number;
+              livePrice: number | null;
+              liveStock: number | null;
+              status: string;
+            }>
+          >`
+            SELECT id, tag, type, "availableKg", "pricePerKg", "livePrice", "liveStock", status
+            FROM animal WHERE id = ${line.animalId} FOR UPDATE
+          `;
+          const bird = locked[0];
+          if (!bird || bird.status !== "AVAILABLE")
+            throw new Error("That poultry batch is no longer available.");
+          if (bird.type !== "TURKEY" && bird.type !== "BROILER")
+            throw new Error("Invalid poultry selection.");
+          if (mode === "live") {
+            const qty = Math.floor(Number(line.qty));
+            if (qty < 1) throw new Error("Choose at least 1 live bird.");
+            if (bird.livePrice == null || bird.liveStock == null)
+              throw new Error(`${bird.tag} is not sold live right now.`);
+            if (bird.liveStock < qty)
+              throw new Error(`Only ${bird.liveStock} live birds left.`);
+            await tx.animal.update({
+              where: { id: bird.id },
+              data: { liveStock: { decrement: qty } },
+            });
+            const amount = qty * bird.livePrice;
+            subtotal += amount;
+            items.push({
+              kind: "poultry",
+              name: `${bird.tag} — ${qty} live bird(s)`,
+              qty,
+              unitPrice: bird.livePrice,
+            });
+          } else {
+            const kg = Number(line.kg);
+            if (!(kg > 0)) throw new Error("Kilos must be more than 0.");
+            if (Number(bird.availableKg) < kg)
+              throw new Error(
+                `Only ${bird.availableKg} kg left on ${bird.tag}.`
+              );
+            const remaining = Number(bird.availableKg) - kg;
+            await tx.animal.update({
+              where: { id: bird.id },
+              data: {
+                availableKg: remaining,
+                status: remaining <= 0 ? "SOLD_OUT" : undefined,
+              },
+            });
+            const amount = Math.round(kg * bird.pricePerKg);
+            subtotal += amount;
+            const reservation = await tx.animalReservation.create({
+              data: {
+                animalId: bird.id,
+                customerId: customer.id,
+                kg,
+                amount,
+              },
+            });
+            items.push({
+              kind: "poultry",
+              name: `${bird.tag} (${kg} kg)`,
+              qty: kg,
+              unitPrice: bird.pricePerKg,
+              reservationId: reservation.id,
+            });
+          }
         } else if (line.kind === "food") {
           const qty = Math.floor(line.qty);
           if (qty < 1) throw new Error("Quantity must be at least 1.");

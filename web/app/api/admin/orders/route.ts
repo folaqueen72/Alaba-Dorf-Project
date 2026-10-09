@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { adminGuard } from "@/lib/adminGuard";
 import { logActivity } from "@/lib/activity";
+import { notifyCustomer } from "@/lib/notify";
 import { ORDER_NEXT } from "@/lib/workflow";
 import type { OrderStatus } from "@prisma/client";
 
@@ -42,7 +43,12 @@ export async function GET(req: Request) {
   return Response.json({ orders });
 }
 
-type Item = { kind: string; qty: number; reservationId?: string };
+type Item = {
+  kind: string;
+  qty: number;
+  reservationId?: string;
+  name?: string;
+};
 
 export async function PATCH(req: Request) {
   const gate = await adminGuard(req);
@@ -114,6 +120,34 @@ export async function PATCH(req: Request) {
                 },
               });
             }
+          } else if (it.kind === "poultry") {
+            if (it.reservationId) {
+              const r = await tx.animalReservation.findUnique({
+                where: { id: it.reservationId },
+              });
+              if (r) {
+                await tx.animal.update({
+                  where: { id: r.animalId },
+                  data: {
+                    availableKg: { increment: r.kg },
+                    status: "AVAILABLE",
+                  },
+                });
+              }
+            } else {
+              // Live birds: find the batch from the item name tag.
+              const tag = (it.name ?? "").split(" — ")[0];
+              const batch = await tx.animal.findUnique({ where: { tag } });
+              if (batch && batch.liveStock != null) {
+                await tx.animal.update({
+                  where: { id: batch.id },
+                  data: {
+                    liveStock: { increment: Math.floor(it.qty) },
+                    status: "AVAILABLE",
+                  },
+                });
+              }
+            }
           }
         }
         if (order.payment && paymentStatus === "PAID") {
@@ -136,6 +170,20 @@ export async function PATCH(req: Request) {
         entityId: order.orderNo,
         before: { orderStatus: order.orderStatus } as never,
         after: { orderStatus: status } as never,
+      });
+      const newStatus = status as OrderStatus;
+      const message: Record<string, string> = {
+        CONFIRMED: `Order #${order.orderNo} confirmed — we are working on it.`,
+        PREPARING: `Order #${order.orderNo} is being prepared.`,
+        READY: `Order #${order.orderNo} is ready for ${order.fulfillment === "DELIVERY" ? "delivery" : "pickup"}.`,
+        OUT_FOR_DELIVERY: `Order #${order.orderNo} is on its way to you.`,
+        COMPLETED: `Order #${order.orderNo} completed. Thank you!`,
+        CANCELLED: `Order #${order.orderNo} was cancelled. Contact us if this is wrong.`,
+      };
+      await notifyCustomer(order.customerId, {
+        title: `Order #${order.orderNo} — ${newStatus.replace(/_/g, " ")}`,
+        body: message[newStatus] ?? `Order #${order.orderNo} updated.`,
+        url: `/track?orderNo=${order.orderNo}`,
       });
       return updated;
     });

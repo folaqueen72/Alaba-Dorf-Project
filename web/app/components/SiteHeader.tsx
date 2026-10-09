@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { AuthStatus } from "./AuthStatus";
+import { NavLink } from "./NavLink";
 
 const links = [
   { href: "/farm", label: "Farm" },
@@ -12,34 +13,32 @@ const links = [
 export function SiteHeader() {
   return (
     <header className="bg-ink text-white sticky top-0 z-10">
-      <div className="max-w-5xl mx-auto px-4 py-2.5 flex items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-2.5">
+      <div className="max-w-5xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2 flex-shrink-0" aria-label="Alaba Dorf home">
           <Image
             src="/logo.png"
             alt="Alaba Dorf Outlet logo"
-            width={40}
-            height={40}
+            width={34}
+            height={34}
             className="rounded-full bg-white"
             priority
           />
-          <span className="font-display text-xl font-semibold leading-none">
+          <span className="hidden min-[420px]:block font-display text-lg leading-none font-semibold">
             Alaba Dorf
-            <span className="block text-[11px] font-sans font-medium tracking-[0.18em] uppercase text-ash-200">
+            <span className="block text-[10px] font-sans font-medium tracking-[0.18em] uppercase text-ash-200">
               Outlet
             </span>
           </span>
         </Link>
-        <nav className="flex items-center gap-1 sm:gap-2 text-sm font-semibold">
+        <nav className="flex items-center gap-1 ml-auto overflow-x-auto py-1">
           {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="px-2 sm:px-3 py-2 rounded-lg hover:bg-ash-800"
-            >
+            <NavLink key={l.href} href={l.href}>
               {l.label}
-            </Link>
+            </NavLink>
           ))}
-          <AuthStatus />
+          <span className="flex-shrink-0">
+            <AuthStatus />
+          </span>
         </nav>
       </div>
     </header>

@@ -118,6 +118,7 @@ model Customer {
   orders       Order[]
   bookings     Booking[]
   reservations AnimalReservation[]
+  pushes       PushSubscription[]
 
   @@map("customer")
 }
@@ -148,6 +149,8 @@ model EggInventory {
 enum AnimalType {
   COW
   PIG
+  TURKEY
+  BROILER
 }
 
 model Animal {
@@ -157,6 +160,9 @@ model Animal {
   totalKg      Decimal       @db.Decimal(10, 2)
   availableKg  Decimal       @db.Decimal(10, 2)
   pricePerKg   Int // kobo
+  // Poultry also sells live birds: price per bird + birds remaining.
+  livePrice    Int?
+  liveStock    Int?
   status       ProductStatus @default(AVAILABLE)
   imageKey     String? // R2 object key
   description  String?
@@ -336,6 +342,20 @@ model Payment {
   reservation AnimalReservation?
 
   @@map("payment")
+}
+
+// ---------- Push subscriptions (order updates) ----------
+
+model PushSubscription {
+  id         String   @id @default(cuid())
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@map("push_subscription")
 }
 
 // ---------- Order numbering ----------

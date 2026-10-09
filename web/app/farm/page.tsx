@@ -3,10 +3,15 @@ import { SiteFooter } from "../components/SiteFooter";
 import { Card } from "../components/ui/Card";
 import { EggOrderCard } from "./EggOrderCard";
 import { MeatOrderCard } from "./MeatOrderCard";
+import { PoultryOrder, type PoultryLine } from "./PoultryOrder";
 import { prisma } from "@/lib/prisma";
-import { koboToNaira } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
+
+const BIRD_NAMES: Record<string, string> = {
+  TURKEY: "Turkey",
+  BROILER: "Broiler",
+};
 
 export default async function FarmPage() {
   const inv = await prisma.eggInventory.findUnique({
@@ -18,16 +23,32 @@ export default async function FarmPage() {
     ? inv.totalCrates - inv.reservedCrates - inv.soldCrates
     : 0;
 
+  const redMeat = animals.filter(
+    (a) => a.type === "COW" || a.type === "PIG"
+  );
+  const poultry: PoultryLine[] = animals
+    .filter((a) => a.type === "TURKEY" || a.type === "BROILER")
+    .map((a) => ({
+      id: a.id,
+      tag: a.tag,
+      bird: BIRD_NAMES[a.type] ?? a.type,
+      availableKg: Number(a.availableKg),
+      pricePerKg: a.pricePerKg,
+      livePrice: a.livePrice,
+      liveStock: a.liveStock,
+      active: a.status === "AVAILABLE",
+    }));
+
   return (
     <>
       <SiteHeader />
       <main className="max-w-5xl mx-auto px-4 w-full">
         <h1 className="font-display text-3xl sm:text-4xl font-semibold mt-6 mb-1">
-          Farm — Eggs &amp; Meat Sharing
+          Farm — Eggs, Meat &amp; Poultry
         </h1>
         <p className="text-ash-600 mb-4">
-          Fresh crates and shared animals. Stock is live — what you see is
-          what is available.
+          Fresh crates, shared animals and poultry. Stock is live — what you
+          see is what is available.
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -43,7 +64,7 @@ export default async function FarmPage() {
               out after the animal is ready.
             </p>
             <div className="space-y-2">
-              {animals.map((a) => (
+              {redMeat.map((a) => (
                 <MeatOrderCard
                   key={a.id}
                   animalId={a.id}
@@ -56,6 +77,13 @@ export default async function FarmPage() {
             </div>
           </Card>
         </div>
+
+        <Card title="Poultry — Turkey & Broiler" className="mt-4">
+          <p className="text-sm text-ash-600 mt-1 mb-3">
+            Choose your bird, then live birds or per-kilo portions.
+          </p>
+          <PoultryOrder batches={poultry} />
+        </Card>
       </main>
       <SiteFooter />
     </>

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { adminGuard } from "@/lib/adminGuard";
 import { logActivity } from "@/lib/activity";
+import { notifyCustomer } from "@/lib/notify";
 import { BOOKING_NEXT } from "@/lib/workflow";
 
 const HOURS = ["10:00", "11:00", "12:00", "13:00", "14:00", "15:00"];
@@ -142,6 +143,19 @@ export async function PATCH(req: Request) {
           action: `booking ${body.status.toLowerCase()}`,
           entity: "booking",
           entityId: booking.id,
+        });
+        const ref = booking.id.slice(0, 8).toUpperCase();
+        const bMessage: Record<string, string> = {
+          CONFIRMED: `Your studio session (${ref}) is confirmed.`,
+          UPCOMING: `Reminder: your studio session (${ref}) is coming up.`,
+          COMPLETED: `Your studio session (${ref}) is completed. Thank you!`,
+          CANCELLED: `Your studio session (${ref}) was cancelled. Contact us if this is wrong.`,
+        };
+        await notifyCustomer(booking.customerId, {
+          title: `Studio booking — ${body.status.replace(/_/g, " ")}`,
+          body:
+            bMessage[body.status] ?? `Your studio booking (${ref}) updated.`,
+          url: `/track`,
         });
         return updated;
       });

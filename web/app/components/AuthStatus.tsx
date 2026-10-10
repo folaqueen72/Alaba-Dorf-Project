@@ -31,9 +31,12 @@ export function AuthStatus() {
 
   return (
     <span className="flex items-center gap-1 text-sm">
-      <span className="hidden sm:inline px-2 py-2 text-ash-200">
+      <Link
+        href="/account"
+        className="hidden sm:inline px-2 py-2 text-ash-200 hover:text-white"
+      >
         Hi, {user.name.split(" ")[0]}
-      </span>
+      </Link>
       <button
         type="button"
         onClick={async () => {

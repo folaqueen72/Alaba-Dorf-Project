@@ -25,6 +25,10 @@ dist/
 build/
 *.log
 
+# Android wrapper + APKs (regenerable; APKs ship via GitHub Releases)
+web/android/
+APK/
+
 # Database
 *.sqlite
 *.db

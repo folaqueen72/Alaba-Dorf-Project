@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { Card } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
+import { PasswordInput } from "../../components/PasswordInput";
 import { authClient } from "@/lib/auth-client";
 
 function LoginForm() {
@@ -56,19 +57,11 @@ function LoginForm() {
             />
           </div>
           <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-semibold mb-1"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              required
+            <PasswordInput
+              label="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-[10px] border border-ash-400 bg-white px-4 py-3 text-[15px] outline-none focus:border-lemon-600"
+              onChange={setPassword}
+              required
             />
           </div>
           {error ? <p className="text-sm font-semibold">{error}</p> : null}

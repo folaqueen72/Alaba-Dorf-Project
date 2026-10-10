@@ -16,6 +16,7 @@ type Admin = {
 export function UsersManager() {
   const [users, setUsers] = useState<Admin[]>([]);
   const [msg, setMsg] = useState<string | null>(null);
+  const [showPw, setShowPw] = useState(false);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -67,6 +68,23 @@ export function UsersManager() {
     });
     const data = await res.json();
     if (!res.ok) setMsg(data.error ?? "Update failed.");
+    load();
+  }
+
+  async function removeAdmin(u: Admin) {
+    if (
+      !window.confirm(
+        `Permanently delete ${u.name} (${u.email})? They will lose access immediately. This cannot be undone. Deactivate instead if they may return.`
+      )
+    )
+      return;
+    const res = await fetch(
+      `/api/admin/users?userId=${encodeURIComponent(u.id)}`,
+      { method: "DELETE" }
+    );
+    const data = await res.json();
+    if (!res.ok) setMsg(data.error ?? "Delete failed.");
+    else setMsg(`${u.name} deleted.`);
     load();
   }
 
@@ -126,14 +144,23 @@ export function UsersManager() {
           </label>
           <label className="block">
             <span className="block text-sm font-semibold mb-1">Password</span>
-            <input
-              required
-              type="password"
-              minLength={8}
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              className="w-full border border-ash-400 rounded-[10px] px-3 py-3 outline-none focus:border-lemon-600"
-            />
+            <span className="relative block">
+              <input
+                required
+                type={showPw ? "text" : "password"}
+                minLength={8}
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                className="w-full border border-ash-400 rounded-[10px] px-3 py-3 pr-14 outline-none focus:border-lemon-600"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPw(!showPw)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold px-2 py-1 text-lemon-800 hover:bg-lemon-50 rounded-lg"
+              >
+                {showPw ? "Hide" : "Show"}
+              </button>
+            </span>
           </label>
           <label className="block">
             <span className="block text-sm font-semibold mb-1">Role</span>
@@ -175,6 +202,9 @@ export function UsersManager() {
               ) : null}
               <Button size="sm" variant="outline" onClick={() => toggleActive(u)}>
                 {u.active ? "Deactivate" : "Activate"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => removeAdmin(u)}>
+                Delete
               </Button>
             </div>
           </div>

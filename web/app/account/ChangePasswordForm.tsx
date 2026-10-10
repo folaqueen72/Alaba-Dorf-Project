@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
+import { PasswordInput } from "../components/PasswordInput";
 import { authClient } from "@/lib/auth-client";
 
 export function ChangePasswordForm() {
@@ -51,46 +52,25 @@ export function ChangePasswordForm() {
         signed-in devices are signed out automatically.
       </p>
       <form onSubmit={submit} className="space-y-3 mt-3">
-        <label className="block">
-          <span className="block text-sm font-semibold mb-1">
-            Current password
-          </span>
-          <input
-            type="password"
-            required
-            value={current}
-            onChange={(e) => setCurrent(e.target.value)}
-            autoComplete="current-password"
-            className="w-full rounded-[10px] border border-ash-400 bg-white px-4 py-3 text-[15px] outline-none focus:border-lemon-600"
-          />
-        </label>
-        <label className="block">
-          <span className="block text-sm font-semibold mb-1">
-            New password (8+ characters)
-          </span>
-          <input
-            type="password"
-            required
-            minLength={8}
-            value={next}
-            onChange={(e) => setNext(e.target.value)}
-            autoComplete="new-password"
-            className="w-full rounded-[10px] border border-ash-400 bg-white px-4 py-3 text-[15px] outline-none focus:border-lemon-600"
-          />
-        </label>
-        <label className="block">
-          <span className="block text-sm font-semibold mb-1">
-            Confirm new password
-          </span>
-          <input
-            type="password"
-            required
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            autoComplete="new-password"
-            className="w-full rounded-[10px] border border-ash-400 bg-white px-4 py-3 text-[15px] outline-none focus:border-lemon-600"
-          />
-        </label>
+        <PasswordInput
+          label="Current password"
+          value={current}
+          onChange={setCurrent}
+          required
+        />
+        <PasswordInput
+          label="New password (8+ characters)"
+          value={next}
+          onChange={setNext}
+          required
+          minLength={8}
+        />
+        <PasswordInput
+          label="Confirm new password"
+          value={confirm}
+          onChange={setConfirm}
+          required
+        />
         {error ? <p className="text-sm font-semibold">{error}</p> : null}
         {done ? (
           <p className="text-sm font-semibold text-lemon-800">

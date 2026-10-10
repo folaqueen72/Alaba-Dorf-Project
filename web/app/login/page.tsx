@@ -7,6 +7,7 @@ import { SiteHeader } from "../components/SiteHeader";
 import { SiteFooter } from "../components/SiteFooter";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
+import { PasswordInput } from "../components/PasswordInput";
 import { authClient } from "@/lib/auth-client";
 
 function LoginForm() {
@@ -50,17 +51,12 @@ function LoginForm() {
               className="w-full rounded-[10px] border border-ash-400 bg-white px-4 py-3 text-[15px] outline-none focus:border-lemon-600"
             />
           </label>
-          <label className="block">
-            <span className="block text-sm font-semibold mb-1">Password</span>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              autoComplete="current-password"
-              className="w-full rounded-[10px] border border-ash-400 bg-white px-4 py-3 text-[15px] outline-none focus:border-lemon-600"
-            />
-          </label>
+          <PasswordInput
+            label="Password"
+            value={password}
+            onChange={setPassword}
+            required
+          />
           {error ? <p className="text-sm font-semibold">{error}</p> : null}
           <Button className="w-full" disabled={busy}>
             {busy ? "Signing in…" : "Sign in"}

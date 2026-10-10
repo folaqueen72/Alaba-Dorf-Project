@@ -171,3 +171,54 @@ export async function PATCH(req: Request) {
     );
   }
 }
+
+// DELETE ?userId= — permanent removal. Cannot delete yourself or the last
+// active Top Admin (that would lock everyone out of account management).
+export async function DELETE(req: Request) {
+  const gate = await adminGuard(req);
+  if ("error" in gate) return gate.error;
+  if (gate.profile.role !== "TOP")
+    return Response.json(
+      { error: "Only Top Admins manage accounts." },
+      { status: 403 }
+    );
+  const userId = new URL(req.url).searchParams.get("userId");
+  try {
+    if (!userId) throw new Error("Missing account.");
+    if (userId === gate.user.id)
+      throw new Error("You cannot delete yourself. Ask the other Top Admin.");
+    const profile = await prisma.adminProfile.findUnique({
+      where: { userId },
+    });
+    if (!profile) throw new Error("Admin not found.");
+    if (profile.role === "TOP") {
+      const tops = await prisma.adminProfile.count({
+        where: { role: "TOP", active: true },
+      });
+      if (tops <= 1)
+        throw new Error(
+          "Cannot delete the last active Top Admin. Create a replacement first."
+        );
+    }
+    await prisma.$transaction(async (tx) => {
+      await tx.permission.deleteMany({ where: { userId } });
+      await tx.adminProfile.delete({ where: { userId } });
+      await tx.session.deleteMany({ where: { userId } });
+      await tx.account.deleteMany({ where: { userId } });
+      await tx.user.delete({ where: { id: userId } });
+    });
+    await logActivity(prisma, {
+      actorId: gate.user.id,
+      action: "admin deleted",
+      entity: "admin",
+      entityId: userId,
+      after: { role: profile.role } as never,
+    });
+    return Response.json({ ok: true });
+  } catch (e) {
+    return Response.json(
+      { error: e instanceof Error ? e.message : "Delete failed." },
+      { status: 400 }
+    );
+  }
+}
